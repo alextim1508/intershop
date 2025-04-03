@@ -11,13 +11,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+
+@Entity
+@Table(name = "orders")
 @Getter
 @Setter
 @NoArgsConstructor
 @ToString(exclude = "orderItems")
 @EqualsAndHashCode(of = "id")
-@Entity
-@Table(name = "orders")
 public class Order {
 
     @Id
@@ -37,16 +38,4 @@ public class Order {
 
     @Temporal(TemporalType.TIMESTAMP)
     private ZonedDateTime completed;
-
-    public void addItem(Item item) {
-        Optional<OrderItem> first = orderItems.stream()
-                .filter(orderItem -> orderItem.getItem().equals(item)).findFirst();
-
-        if(first.isPresent()) {
-            OrderItem orderItem = first.get();
-            orderItem.setCount(orderItem.getCount() + 1);
-        } else {
-            orderItems.add(new OrderItem(this, item));
-        }
-    }
 }

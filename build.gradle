@@ -24,6 +24,7 @@ ext {
     lombokVersion = "1.18.36"
     mapstructVersion = "1.5.3.Final"
     lombokMapstructBindingVersion = "0.2.0"
+    guavaVersion = "26.0-jre"
 }
 
 bootJar {
@@ -52,6 +53,7 @@ dependencies {
     //========== Utils ==========
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    implementation("com.google.guava:guava:${guavaVersion}")
 
     //========== Test ==========
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

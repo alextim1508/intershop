@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 public class PagingDto {
     public int pageNumber;
     public int pageSize;
-    public int hasNext;
-    public int hasPrevious;
+    public boolean hasNext;
+    public boolean hasPrevious;
 }

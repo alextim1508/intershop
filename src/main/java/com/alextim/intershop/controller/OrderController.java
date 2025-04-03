@@ -1,6 +1,11 @@
 package com.alextim.intershop.controller;
 
 import com.alextim.intershop.dto.OrderDto;
+import com.alextim.intershop.entity.Order;
+import com.alextim.intershop.mapper.ItemMapper;
+import com.alextim.intershop.service.OrderService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,29 +13,51 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
 @RequestMapping("/orders")
+@RequiredArgsConstructor
+@Slf4j
 public class OrderController {
+
+    private final OrderService orderService;
+
+    private final ItemMapper itemMapper;
 
     @GetMapping
     public String getOrders(Model model) {
+        log.info("incoming request for getting orders");
 
-        List<OrderDto> orderDtos = new ArrayList<>();
+        List<Order> orders = orderService.findAllOrders();
 
-        model.addAttribute("orders", orderDtos);
+        List<OrderDto> dto = orders.stream().map(order ->
+                new OrderDto(
+                        order.getId(),
+                        orderService.getItemsFromOrder(order).stream().map(itemMapper::toDto).toList())
+        ).toList();
+        log.info("order dto: {}", dto);
+
+        model.addAttribute("orders", dto);
 
         return "orders";
     }
 
     @GetMapping("/{id}")
-    public String getOrder(@PathVariable int id, @RequestParam boolean newOrder, Model model) {
-        OrderDto orderDto = new OrderDto();
+    public String getOrder(@PathVariable long id, @RequestParam boolean newOrder, Model model) {
+        log.info("incoming request for getting order by id: {}", id);
 
-        model.addAttribute("order", orderDto);
+        Order order = orderService.findById(id);
+
+        OrderDto dto = new OrderDto(
+                order.getId(),
+                orderService.getItemsFromOrder(order).stream().map(itemMapper::toDto).toList()
+        );
+        log.info("order dto: {}", dto);
+
+        model.addAttribute("order", dto);
         model.addAttribute("newOrder", newOrder);
+
         return "order";
     }
 

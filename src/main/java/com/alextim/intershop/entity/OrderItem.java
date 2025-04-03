@@ -4,14 +4,14 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table( name = "orders_items",
+        indexes = @Index(name = "uq_items_orders_item_id_order_id", columnList = "order, item", unique = true))
 @Getter
 @Setter
 @ToString
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @RequiredArgsConstructor
-@Table( name = "orders_items",
-        indexes = @Index(name = "uq_items_orders_item_id_order_id", columnList = "order, item", unique = true)
-)
 public class OrderItem {
 
     @Id
