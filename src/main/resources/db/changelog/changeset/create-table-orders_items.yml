@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-table-orders_items-id
+      author: Aleksey Timofeev
+      changes:
+        - createTable:
+            tableName: orders_items
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: order_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_orders_orders_items
+                    references: orders(id)
+              - column:
+                  name: item_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_items_orders_items
+                    references: items(id)
+              - column:
+                  name: count
+                  type: int
+                  defaultValue: "0"
+                  constraints:
+                    nullable: false

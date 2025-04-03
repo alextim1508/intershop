@@ -1,0 +1,62 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.4'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group 'com.alextim'
+version '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    postgresVersion = "42.7.5"
+    h2Version = "2.2.224"
+
+    lombokVersion = "1.18.36"
+    mapstructVersion = "1.5.3.Final"
+    lombokMapstructBindingVersion = "0.2.0"
+}
+
+bootJar {
+    archiveBaseName = 'intershop'
+    archiveVersion = ''
+}
+
+dependencies {
+    //========== Web ==========
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    //========== Database ==========
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.liquibase:liquibase-core'
+    implementation "org.postgresql:postgresql:${postgresVersion}"
+    implementation 'org.projectlombok:lombok:1.18.20'
+    testImplementation "com.h2database:h2:${h2Version}"
+
+    //========== Mapper ==========
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+    //========== Utils ==========
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    //========== Test ==========
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
+}

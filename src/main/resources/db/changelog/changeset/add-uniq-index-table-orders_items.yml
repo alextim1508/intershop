@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-uniq-index-to-table-orders-items-id
+      author: Aleksey Timofeev
+      changes:
+        - addUniqueConstraint:
+            columnNames: item_id, order_id
+            constraintName: uq_items_orders_item_id_order_id
+            tableName: orders_items
