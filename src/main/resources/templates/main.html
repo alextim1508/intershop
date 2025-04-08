@@ -53,7 +53,7 @@
                     <tr>
                         <td>
                             <a th:href="${'/items/'+item.getId()}">
-                                <img width="300" height="300" th:src="${'http://localhost:8080/'+item.getImgPath()}">
+                                <img width="300" height="300" th:src="${item.getImgPath()}">
                             </a>
                         </td>
                     </tr>
@@ -71,6 +71,11 @@
                     <tr>
                         <td>
                             <form th:action="${'/main/items/'+item.getId()}" method="post">
+                                <input type="hidden" name="sort" th:value="${sort}"></input>
+                                <input type="hidden" name="search" th:value="${search}"></input>
+                                <input type="hidden" name="pageSize" th:value="${paging.pageSize()}"></input>
+                                <input type="hidden" name="pageNumber" th:value="${paging.pageNumber()}"></input>
+
                                 <button name="action" value="minus">-</button>
                                 <span th:text="${item.getCount()}"></span>
                                 <button name="action" value="plus">+</button>

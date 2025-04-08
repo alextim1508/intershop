@@ -1,6 +1,7 @@
 package com.alextim.intershop.service;
 
 import com.alextim.intershop.entity.Item;
+import com.alextim.intershop.entity.OrderItem;
 import com.alextim.intershop.exeption.ItemNotFoundException;
 import com.alextim.intershop.repository.ItemRepository;
 import com.alextim.intershop.utils.SortType;
@@ -10,7 +11,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.AbstractMap.SimpleEntry;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+
+import static com.alextim.intershop.utils.Status.CURRENT;
 
 @Service
 @RequiredArgsConstructor
@@ -20,16 +28,32 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
 
     @Override
-    public Item findById(long id) {
-        Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new ItemNotFoundException(id));
-        log.info("item by id {}: {}", id, item);
-
-        return item;
+    public Item save(Item item) {
+        log.info("saving item: {}", item);
+        return itemRepository.save(item);
     }
 
     @Override
-    public List<Item> search(String search, SortType sort, int pageNumber, int pageSize) {
+    public Entry<Item, Integer> findById(long id) {
+        log.info("find item by id {}", id);
+
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new ItemNotFoundException(id));
+        log.info("item: {}", item);
+
+        Integer count = item.getOrderItems()
+                .stream()
+                .filter(it -> it.getOrder().getStatus().equals(CURRENT))
+                .map(OrderItem::getCount)
+                .findFirst()
+                .orElse(0);
+        log.info("count: {}", count);
+
+        return new SimpleEntry<>(item, count);
+    }
+
+    @Override
+    public Map<Item, Integer> search(String search, SortType sort, int pageNumber, int pageSize) {
         log.info("search {}, sort {}, pageNumber {}, pageSize {}", search, sort, pageNumber, pageSize);
 
         PageRequest pageRequest = switch (sort) {
@@ -47,13 +71,35 @@ public class ItemServiceImpl implements ItemService {
         }
         log.info("items: {}", items);
 
-        return items;
+        Map<Item, Integer> itemCounts = items.stream()
+                .collect(Collectors.toMap(
+                        item -> item,
+                        item -> item.getOrderItems().stream()
+                                .filter(it -> it.getOrder().getStatus().equals(CURRENT))
+                                .map(OrderItem::getCount)
+                                .findFirst()
+                                .orElse(0),
+                        (existing, replacement) -> replacement,
+                        LinkedHashMap::new
+                ));
+        log.info("item counts: {}", itemCounts);
+
+        return itemCounts;
     }
 
     @Override
-    public long count() {
-        long count = itemRepository.count();
+    public long count(String search) {
+        log.info("count of items by search string {}", search);
+
+        long count;
+        if (search.isEmpty()) {
+            count = itemRepository.count();
+        } else {
+            count = itemRepository.countBySearch(search);
+        }
+
         log.info("item count: {}", count);
+
         return count;
     }
 }

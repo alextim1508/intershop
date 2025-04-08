@@ -4,7 +4,6 @@ import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.entity.OrderItem;
 import com.alextim.intershop.exeption.CurrentOrderAbsentException;
-import com.alextim.intershop.exeption.ItemAbsentInCurrentOrderException;
 import com.alextim.intershop.exeption.ItemNotFoundException;
 import com.alextim.intershop.exeption.OrderNotFoundException;
 import com.alextim.intershop.repository.ItemRepository;
@@ -16,7 +15,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.alextim.intershop.utils.Status.COMPLETED;
 import static com.alextim.intershop.utils.Status.CURRENT;
@@ -30,7 +33,15 @@ public class OrderServiceImpl implements OrderService {
     private final ItemRepository itemRepository;
 
     @Override
-    public List<Order> findAllOrders() {
+    public Order save(Order order) {
+        log.info("saving order: {}", order);
+        return orderRepository.save(order);
+    }
+
+    @Override
+    public List<Order> findAllCompletedOrders() {
+        log.info("find all completed order");
+
         List<Order> orders = orderRepository.findByStatus(COMPLETED);
         log.info("completed orders: {}", orders);
 
@@ -39,40 +50,43 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order findById(long id) {
+        log.info("find order by id {}", id);
+
         Order order = orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id));
-        log.info("order by id {}: {}", id, order);
+        log.info("order: {}", order);
 
         return order;
     }
 
     @Override
-    public List<Item> getItemsFromCurrentOrder() {
-        Order currentOrder = orderRepository.findByStatus(CURRENT).stream().findFirst()
+    public Order getCurrentOrder() {
+        Order currentOrder = orderRepository.findByStatus(CURRENT).stream()
+                .findFirst()
                 .orElseThrow(CurrentOrderAbsentException::new);
         log.info("current order: {}", currentOrder);
 
-        List<Item> items = currentOrder.getOrderItems().stream().map(OrderItem::getItem).toList();
-        log.info("items: {}", items);
-
-        return items;
+        return currentOrder;
     }
 
     @Override
-    public List<Item> getItemsFromOrder(Order order) {
-        List<Item> items = order.getOrderItems().stream().map(OrderItem::getItem).toList();
-        log.info("items: {}", items);
+    public Map<Item, Integer> getItemsFromOrder(Order order) {
+        Map<Item, Integer> itemCounts = order.getOrderItems().stream()
+                .collect(Collectors.toMap(
+                        OrderItem::getItem,
+                        OrderItem::getCount,
+                        (existing, replacement) -> replacement,
+                        LinkedHashMap::new));
+        log.info("item counts: {}", itemCounts);
 
-        return items;
+        return itemCounts;
     }
 
     @Override
-    public double calcPriceOfCurrentOrder() {
-        Order currentOrder = orderRepository.findByStatus(CURRENT).stream().findFirst()
-                .orElseThrow(CurrentOrderAbsentException::new);
-        log.info("current order: {}", currentOrder);
+    public double calcPrice(Order order) {
+        log.info("price calculation");
 
         double price = 0;
-        for (OrderItem orderItem : currentOrder.getOrderItems()) {
+        for (OrderItem orderItem : order.getOrderItems()) {
             log.info("{}", orderItem.getItem());
 
             Double itemPrice = orderItem.getItem().getPrice();
@@ -91,6 +105,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order completeCurrentOrder() {
+        log.info("complete current order");
+
         Order currentOrder = orderRepository.findByStatus(CURRENT).stream().findFirst()
                 .orElseThrow(CurrentOrderAbsentException::new);
         currentOrder.setStatus(COMPLETED);
@@ -117,15 +133,29 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(CurrentOrderAbsentException::new);
         log.info("current order: {}", currentOrder);
 
-        OrderItem orderItem = currentOrder.getOrderItems().stream()
-                .filter(it -> it.getItem().equals(item)).findFirst()
-                .orElseThrow(() -> new ItemAbsentInCurrentOrderException(item.getId()));
+        Optional<OrderItem> orderItem = currentOrder.getOrderItems().stream()
+                .filter(it -> it.getItem().equals(item)).findFirst();
         log.info("order-item relationship: {}", orderItem);
 
         switch (action) {
-            case PLUS -> orderItem.setCount(orderItem.getCount() + 1);
-            case MINUS -> orderItem.setCount(orderItem.getCount() - 1);
-            case DELETE -> currentOrder.getOrderItems().remove(orderItem);
+            case PLUS -> {
+                if(orderItem.isPresent()) {
+                    orderItem.get().setCount(orderItem.get().getCount() + 1);
+                } else {
+                    currentOrder.getOrderItems().add(new OrderItem(currentOrder, item));
+                }
+            }
+            case MINUS -> {
+                orderItem.ifPresent(value -> {
+                    if (value.getCount() > 0)
+                        value.setCount(value.getCount() - 1);
+                });
+            }
+            case DELETE -> {
+                orderItem.ifPresent(value -> {
+                    currentOrder.getOrderItems().remove(value);
+                });
+            }
         }
 
         orderRepository.save(currentOrder);

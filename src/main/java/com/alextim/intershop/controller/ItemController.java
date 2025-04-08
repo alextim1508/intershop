@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map.Entry;
+
 @Controller
 @RequestMapping(value = "/items")
 @RequiredArgsConstructor
@@ -26,12 +28,14 @@ public class ItemController {
     @GetMapping("/{id}")
     public String getItem(@PathVariable("id") long id, Model model) {
         log.info("incoming request for getting item by id {}", id);
-        Item item = itemService.findById(id);
 
-        ItemDto dto = itemMapper.toDto(item);
+        Entry<Item, Integer> item = itemService.findById(id);
+
+        ItemDto dto = itemMapper.toDto(item.getKey(), item.getValue());
         log.info("item dto: {}", dto);
 
         model.addAttribute("item", dto);
+
         return "item";
     }
 

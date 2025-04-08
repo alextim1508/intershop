@@ -8,9 +8,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public abstract class ItemMapper {
 
-    public abstract Item toModel(ItemDto itemDto);
-
-    @Mapping(target = "count", expression = "java(item.getOrderItems().getCount())")
-    @Mapping(target = "price", expression = "java(item.getOrderItems().getPrice())")
-    public abstract ItemDto toDto(Item item);
+    @Mapping(target = "count", source = "count")
+    public abstract ItemDto toDto(Item item, int count);
 }

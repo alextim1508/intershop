@@ -22,6 +22,8 @@ public class BuyController {
 
         Order completedOrder = orderService.completeCurrentOrder();
 
-        return "redirect:/orders/" + completedOrder.getId() + "?newOrder=true";
+        return "redirect:/orders/" + completedOrder.getId() +
+                "?" +
+                "newOrder=" + true;
     }
 }

@@ -11,21 +11,24 @@ import lombok.*;
 @ToString
 @EqualsAndHashCode(of = "id")
 @NoArgsConstructor
-@RequiredArgsConstructor
 public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NonNull
     @ManyToOne
     private Order order;
 
-    @NonNull
     @ManyToOne
     private Item item;
 
     @Column(columnDefinition = "INT DEFAULT '0'")
     private int count = 0;
+
+    public OrderItem(@NonNull Order order, @NonNull Item item) {
+        this.order = order;
+        this.item = item;
+        this.count = 1;
+    }
 }

@@ -16,10 +16,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @Controller
@@ -32,7 +30,7 @@ public class MainController {
 
     private final ItemMapper itemMapper;
 
-    @Value("app.partitionCount")
+    @Value("${app.partition-count}")
     private int partitionCount;
 
     @GetMapping
@@ -43,36 +41,48 @@ public class MainController {
                            Model model) {
         log.info("incoming request for getting items");
 
-        List<Item> items = itemService.search(search, sort, pageNumber, pageSize);
+        Map<Item, Integer> itemCounts = itemService.search(search, sort, pageNumber - 1, pageSize);
 
-        List<List<ItemDto>> itemDto = Lists.partition(
-                items.stream().map(itemMapper::toDto).toList(),
-                Math.min(partitionCount, pageSize)
-        );
-        log.info("item dto: {}", itemDto);
+        List<ItemDto> itemDtos = itemCounts.entrySet().stream()
+                .map(it -> itemMapper.toDto(it.getKey(), it.getValue()))
+                .toList();
 
-        long count = itemService.count();
+        List<List<ItemDto>> partitionItemDto = Lists.partition(itemDtos, partitionCount);
+        log.info("item dto: {}", partitionItemDto);
 
-        PagingDto pagingDto = new PagingDto(pageNumber,
+        long count = itemService.count(search);
+
+        PagingDto pagingDto = new PagingDto(
+                pageNumber,
                 pageSize,
                 (long) pageNumber * pageSize < count,
-                pageNumber != 0);
+                pageNumber != 1);
         log.info("paging dto: {}", pagingDto);
 
-        model.addAttribute("items", itemDto);
-        model.addAttribute("search",search);
-        model.addAttribute("sort", sort);
+        model.addAttribute("items", partitionItemDto);
+        model.addAttribute("search", search);
+        model.addAttribute("sort", sort.name());
         model.addAttribute("paging", pagingDto);
 
         return "main";
     }
 
     @PostMapping("/{id}")
-    public String changeItemCountInCart(@PathVariable long id, @RequestParam Action action) {
+    public String changeItemCountInCart(@PathVariable long id,
+                                        @RequestParam Action action,
+                                        @RequestParam String search,
+                                        @RequestParam SortType sort,
+                                        @RequestParam Integer pageSize,
+                                        @RequestParam Integer pageNumber) {
         log.info("incoming request for change item count in cart. item id {}, action {}", id, action);
 
         orderService.changeItemCountInCart(id, action);
 
-        return "redirect:/main/items";
+        return "redirect:/main/items" +
+                "?" +
+                "search=" + search + "&" +
+                "sort=" + sort + "&" +
+                "pageSize=" + pageSize + "&" +
+                "pageNumber=" + pageNumber;
     }
 }

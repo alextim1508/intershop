@@ -24,7 +24,9 @@ ext {
     lombokVersion = "1.18.36"
     mapstructVersion = "1.5.3.Final"
     lombokMapstructBindingVersion = "0.2.0"
+
     guavaVersion = "26.0-jre"
+    lombokVersion = "1.18.20"
 }
 
 bootJar {
@@ -42,7 +44,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.liquibase:liquibase-core'
     implementation "org.postgresql:postgresql:${postgresVersion}"
-    implementation 'org.projectlombok:lombok:1.18.20'
+    implementation "org.projectlombok:lombok:${lombokVersion}"
     testImplementation "com.h2database:h2:${h2Version}"
 
     //========== Mapper ==========

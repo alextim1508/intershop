@@ -29,12 +29,14 @@ public class OrderController {
     public String getOrders(Model model) {
         log.info("incoming request for getting orders");
 
-        List<Order> orders = orderService.findAllOrders();
+        List<Order> orders = orderService.findAllCompletedOrders();
 
         List<OrderDto> dto = orders.stream().map(order ->
                 new OrderDto(
                         order.getId(),
-                        orderService.getItemsFromOrder(order).stream().map(itemMapper::toDto).toList())
+                        orderService.getItemsFromOrder(order).entrySet().stream()
+                                .map(it -> itemMapper.toDto(it.getKey(), it.getValue())).toList(),
+                        orderService.calcPrice(order))
         ).toList();
         log.info("order dto: {}", dto);
 
@@ -44,14 +46,16 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public String getOrder(@PathVariable long id, @RequestParam boolean newOrder, Model model) {
+    public String getOrder(@PathVariable long id, @RequestParam(defaultValue = "false") boolean newOrder, Model model) {
         log.info("incoming request for getting order by id: {}", id);
 
         Order order = orderService.findById(id);
 
         OrderDto dto = new OrderDto(
                 order.getId(),
-                orderService.getItemsFromOrder(order).stream().map(itemMapper::toDto).toList()
+                orderService.getItemsFromOrder(order).entrySet().stream()
+                        .map(it -> itemMapper.toDto(it.getKey(), it.getValue())).toList(),
+                orderService.calcPrice(order)
         );
         log.info("order dto: {}", dto);
 

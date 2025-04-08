@@ -1,22 +1,26 @@
 package com.alextim.intershop.service;
 
+
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.utils.Action;
 
 import java.util.List;
+import java.util.Map;
 
 public interface OrderService {
 
-    List<Order> findAllOrders();
+    Order save(Order order);
+
+    List<Order> findAllCompletedOrders();
 
     Order findById(long id);
 
-    List<Item> getItemsFromCurrentOrder();
+    Order getCurrentOrder();
 
-    List<Item> getItemsFromOrder(Order order);
+    Map<Item, Integer> getItemsFromOrder(Order order);
 
-    double calcPriceOfCurrentOrder();
+    double calcPrice(Order order);
 
     Order completeCurrentOrder();
 

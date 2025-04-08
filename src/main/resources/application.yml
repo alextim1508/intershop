@@ -1,2 +1,18 @@
 app:
-  partitionCount: 10
+  partition-count: 4
+
+spring:
+  datasource:
+    url: jdbc:postgresql://db:5432/intershopdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    enabled: true
+  sql:
+    init:
+      mode: always
+hibernate:
+  dialect: org.hibernate.dialect.PostgreSQLDialect
+  hbm2ddl.auto: none
+

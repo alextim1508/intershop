@@ -14,4 +14,10 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
             "UPPER(i.title) LIKE CONCAT('%',UPPER(:search),'%') OR " +
             "UPPER(i.description) LIKE CONCAT('%',UPPER(:search),'%')")
     List<Item> search(@Param("search") String search, Pageable pageable);
+
+
+    @Query("SELECT COUNT(i) FROM Item i WHERE " +
+            "UPPER(i.title) LIKE CONCAT('%',UPPER(:search),'%') OR " +
+            "UPPER(i.description) LIKE CONCAT('%',UPPER(:search),'%')")
+    long countBySearch(String search);
 }

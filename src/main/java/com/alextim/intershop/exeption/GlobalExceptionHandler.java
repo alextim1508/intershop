@@ -16,15 +16,15 @@ public class GlobalExceptionHandler {
         log.error("GlobalExceptionHandler", e);
     }
 
-    @ExceptionHandler(ItemAbsentInCurrentOrderException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public void handleItemAbsentInCurrentOrderException(Exception e) {
-        log.error("GlobalExceptionHandler", e);
-    }
-
     @ExceptionHandler(CurrentOrderAbsentException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public void handleCurrentOrderAbsentException(Exception e) {
+        log.error("GlobalExceptionHandler", e);
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public void handleException(Exception e) {
         log.error("GlobalExceptionHandler", e);
     }
 }

@@ -11,7 +11,7 @@ import java.util.List;
 @Table(name = "items")
 @Getter
 @Setter
-@ToString(exclude = "orderItems")
+@ToString(exclude = {"orderItems", "description", "imgPath"})
 @EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @RequiredArgsConstructor

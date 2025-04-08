@@ -3,13 +3,15 @@ package com.alextim.intershop.service;
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.utils.SortType;
 
-import java.util.List;
+import java.util.Map;
 
 public interface ItemService {
 
-    Item findById(long id);
+    Item save(Item item);
 
-    List<Item> search(String search, SortType sort, int pageNumber, int pageSize);
+    Map.Entry<Item, Integer> findById(long id);
 
-    long count();
+    Map<Item, Integer> search(String search, SortType sort, int pageNumber, int pageSize);
+
+    long count(String search);
 }
