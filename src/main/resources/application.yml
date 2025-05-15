@@ -2,17 +2,21 @@ app:
   partition-count: 4
 
 spring:
-  datasource:
-    url: jdbc:postgresql://db:5432/intershopdb
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5433/intershopdb
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
   liquibase:
     enabled: true
+    url: jdbc:postgresql://db:5432/intershopdb
+    user: postgres
+    password: postgres
   sql:
     init:
       mode: always
-hibernate:
-  dialect: org.hibernate.dialect.PostgreSQLDialect
-  hbm2ddl.auto: none
+
+logging:
+  level:
+    org.springframework.r2dbc.core.DefaultDatabaseClient: INFO
 

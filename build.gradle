@@ -18,8 +18,8 @@ repositories {
 }
 
 ext {
-    postgresVersion = "42.7.5"
-    h2Version = "2.2.224"
+    postgresVersion = "0.8.6.RELEASE"
+    h2Version = "1.0.0.RELEASE"
 
     lombokVersion = "1.18.36"
     mapstructVersion = "1.5.3.Final"
@@ -36,16 +36,18 @@ bootJar {
 
 dependencies {
     //========== Web ==========
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     //========== Database ==========
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation("org.postgresql:r2dbc-postgresql:1.0.7.RELEASE")
+
     implementation 'org.liquibase:liquibase-core'
-    implementation "org.postgresql:postgresql:${postgresVersion}"
-    implementation "org.projectlombok:lombok:${lombokVersion}"
-    testImplementation "com.h2database:h2:${h2Version}"
+    implementation "org.postgresql:postgresql:42.7.5"
+
+    testImplementation "io.r2dbc:r2dbc-h2:${h2Version}"
 
     //========== Mapper ==========
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
@@ -53,7 +55,7 @@ dependencies {
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
 
     //========== Utils ==========
-    compileOnly 'org.projectlombok:lombok'
+    implementation "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor 'org.projectlombok:lombok'
     implementation("com.google.guava:guava:${guavaVersion}")
 

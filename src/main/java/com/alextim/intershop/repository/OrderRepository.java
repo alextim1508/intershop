@@ -2,10 +2,12 @@ package com.alextim.intershop.repository;
 
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.utils.Status;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
+@Repository
+public interface OrderRepository extends ReactiveCrudRepository<Order, Long> {
 
-public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findByStatus(Status status);
+    Flux<Order> findByStatus(Status status);
 }

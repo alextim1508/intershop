@@ -1,11 +1,12 @@
 package com.alextim.intershop.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
-@Entity
-@Table( name = "orders_items",
-        indexes = @Index(name = "uq_items_orders_item_id_order_id", columnList = "order, item", unique = true))
+
+@Table("orders_items")
 @Getter
 @Setter
 @ToString
@@ -14,21 +15,22 @@ import lombok.*;
 public class OrderItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    private Order order;
+    @NonNull
+    @Column("order_id")
+    private Long orderId;
 
-    @ManyToOne
-    private Item item;
+    @NonNull
+    @Column("item_id")
+    private Long itemId;
 
-    @Column(columnDefinition = "INT DEFAULT '0'")
-    private int count = 0;
+    @Column("count")
+    private int quantity;
 
-    public OrderItem(@NonNull Order order, @NonNull Item item) {
-        this.order = order;
-        this.item = item;
-        this.count = 1;
+    public OrderItem(@NonNull Long orderId, @NonNull Long itemId, int quantity) {
+        this.orderId = orderId;
+        this.itemId = itemId;
+        this.quantity = quantity;
     }
 }

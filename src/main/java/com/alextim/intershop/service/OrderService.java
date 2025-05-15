@@ -4,25 +4,26 @@ package com.alextim.intershop.service;
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.utils.Action;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 
 public interface OrderService {
 
-    Order save(Order order);
+    Mono<Order> save(Order order);
 
-    List<Order> findAllCompletedOrders();
+    Flux<Order> findAllCompletedOrders();
 
-    Order findById(long id);
+    Mono<Order> findById(long id);
 
-    Order getCurrentOrder();
+    Mono<Order> findCurrentOrder();
 
-    Map<Item, Integer> getItemsFromOrder(Order order);
+    Flux<? extends Entry<Item, Integer>> findItemsWithQuantityByOrderId(long orderId);
 
-    double calcPrice(Order order);
+    Mono<Order> completeCurrentOrder();
 
-    Order completeCurrentOrder();
+    Mono<?> changeItemQuantityInCart(long itemId, Action action);
 
-    void changeItemCountInCart(long id, Action action);
+    double calcPrice(Item item, int quantity);
 }

@@ -1,21 +1,24 @@
 package com.alextim.intershop.controller;
 
+import com.alextim.intershop.dto.ActionDto;
 import com.alextim.intershop.dto.CartDto;
 import com.alextim.intershop.dto.ItemDto;
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
+import com.alextim.intershop.mapper.ActionMapper;
 import com.alextim.intershop.mapper.ItemMapper;
 import com.alextim.intershop.service.OrderService;
-import com.alextim.intershop.utils.Action;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.result.view.Rendering;
+import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
+import java.util.Map.Entry;
+
 
 @Controller
 @RequestMapping(value = "/cart/items")
@@ -26,40 +29,44 @@ public class CartController {
     private final OrderService orderService;
 
     private final ItemMapper itemMapper;
+    private final ActionMapper actionMapper;
 
     @GetMapping
-    public String getCart(Model model) {
+    public Mono<Rendering> getCart() {
         log.info("incoming request for getting current order");
 
-        Order currentOrder = orderService.getCurrentOrder();
-
-        Map<Item, Integer> items = orderService.getItemsFromOrder(currentOrder);
-
-        List<ItemDto> dto = items.entrySet().stream()
-                .map(it -> itemMapper.toDto(it.getKey(), it.getValue())).toList();
-        log.info("dto: {}", dto);
-
-        double price = orderService.calcPrice(currentOrder);
-
-        CartDto cartDto = new CartDto(
-                dto,
-                price,
-                dto.isEmpty());
-        log.info("cartDto: {}", cartDto);
-
-        model.addAttribute("items", cartDto.items);
-        model.addAttribute("total", cartDto.total);
-        model.addAttribute("empty", cartDto.empty);
-
-        return "cart";
+        return orderService.findCurrentOrder()
+                .flatMap(this::getCartDtoMono)
+                .doOnNext(cartDto -> log.info("cartDto: {}", cartDto))
+                .map(cartDto -> Rendering.view("cart")
+                        .modelAttribute("items", cartDto.items)
+                        .modelAttribute("total", cartDto.total)
+                        .modelAttribute("empty", cartDto.empty)
+                        .build()
+                );
     }
 
     @PostMapping("/{id}")
-    public String changeItemCountInCart(@PathVariable long id, @RequestParam Action action) {
-        log.info("incoming request for change item count in cart. item id {}, action {}", id, action);
+    public Mono<String> changeItemQuantityInCart(@PathVariable long id, @ModelAttribute ActionDto action) {
+        log.info("incoming request for change item quantity in cart. item id {}, action {}", id, action);
 
-        orderService.changeItemCountInCart(id, action);
-
-        return "redirect:/cart/items";
+        return orderService.changeItemQuantityInCart(id, actionMapper.to(action))
+                .then(Mono.just("redirect:/cart/items"));
     }
- }
+
+    private Mono<CartDto> getCartDtoMono(Order order) {
+        return orderService.findItemsWithQuantityByOrderId(order.getId())
+                .collectMap(Entry::getKey, Entry::getValue)
+                .map(map -> {
+                    List<ItemDto> itemDtos = new ArrayList<>();
+                    double totalSum = 0;
+                    for (Entry<Item, Integer> entry : map.entrySet()) {
+                        itemDtos.add(itemMapper.toDto(entry.getKey(), entry.getValue()));
+                        totalSum += orderService.calcPrice(entry.getKey(), entry.getValue());
+                    }
+                    log.info("total sum: {} of order {}", totalSum, order);
+
+                    return new CartDto(itemDtos, totalSum, itemDtos.isEmpty());
+                });
+    }
+}

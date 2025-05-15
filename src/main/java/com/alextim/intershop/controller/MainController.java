@@ -1,23 +1,24 @@
 package com.alextim.intershop.controller;
 
+import com.alextim.intershop.dto.ActionDto;
 import com.alextim.intershop.dto.ItemDto;
 import com.alextim.intershop.dto.PagingDto;
-import com.alextim.intershop.entity.Item;
+import com.alextim.intershop.dto.ViewParamDto;
+import com.alextim.intershop.mapper.ActionMapper;
 import com.alextim.intershop.mapper.ItemMapper;
 import com.alextim.intershop.service.ItemService;
 import com.alextim.intershop.service.OrderService;
-import com.alextim.intershop.utils.Action;
 import com.alextim.intershop.utils.SortType;
-import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.result.view.Rendering;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Map;
 
 @RequiredArgsConstructor
 @Controller
@@ -29,60 +30,59 @@ public class MainController {
     private final OrderService orderService;
 
     private final ItemMapper itemMapper;
+    private final ActionMapper actionMapper;
 
     @Value("${app.partition-count}")
     private int partitionCount;
 
     @GetMapping
-    public String getItems(@RequestParam(defaultValue = "") String search,
-                           @RequestParam(defaultValue = "NO") SortType sort,
-                           @RequestParam(defaultValue = "10") Integer pageSize,
-                           @RequestParam(defaultValue = "1") Integer pageNumber,
-                           Model model) {
+    public Mono<Rendering> getItems(@RequestParam(defaultValue = "") String search,
+                                    @RequestParam(defaultValue = "NO") SortType sort,
+                                    @RequestParam(defaultValue = "10") Integer pageSize,
+                                    @RequestParam(defaultValue = "1") Integer pageNumber) {
         log.info("incoming request for getting items");
 
-        Map<Item, Integer> itemCounts = itemService.search(search, sort, pageNumber - 1, pageSize);
+        Flux<List<ItemDto>> partitionItemDto = itemService.findItemsWithQuantity(search, sort, pageNumber - 1, pageSize)
+                .map(entry -> itemMapper.toDto(entry.getKey(), entry.getValue()))
+                .doOnNext(itemDto -> log.info("itemDto: {}", itemDto.getId()))
+                .buffer(partitionCount)
+                .doOnNext(it -> log.info("partitioned item dtos: {}", it));
 
-        List<ItemDto> itemDtos = itemCounts.entrySet().stream()
-                .map(it -> itemMapper.toDto(it.getKey(), it.getValue()))
-                .toList();
+        Mono<PagingDto> pagingDto = itemService.count(search)
+                .map(count ->
+                        new PagingDto(
+                                pageNumber,
+                                pageSize,
+                                (long) pageNumber * pageSize < count,
+                                pageNumber != 1
+                        )
+                )
+                .doOnNext(it -> log.info("paging dto: {}", it));
 
-        List<List<ItemDto>> partitionItemDto = Lists.partition(itemDtos, partitionCount);
-        log.info("item dto: {}", partitionItemDto);
-
-        long count = itemService.count(search);
-
-        PagingDto pagingDto = new PagingDto(
-                pageNumber,
-                pageSize,
-                (long) pageNumber * pageSize < count,
-                pageNumber != 1);
-        log.info("paging dto: {}", pagingDto);
-
-        model.addAttribute("items", partitionItemDto);
-        model.addAttribute("search", search);
-        model.addAttribute("sort", sort.name());
-        model.addAttribute("paging", pagingDto);
-
-        return "main";
+        Rendering r = Rendering.view("main")
+                .modelAttribute("items", partitionItemDto)
+                .modelAttribute("paging", pagingDto)
+                .modelAttribute("search", search)
+                .modelAttribute("sort", sort.name())
+                .build();
+        return Mono.just(r);
     }
 
     @PostMapping("/{id}")
-    public String changeItemCountInCart(@PathVariable long id,
-                                        @RequestParam Action action,
-                                        @RequestParam String search,
-                                        @RequestParam SortType sort,
-                                        @RequestParam Integer pageSize,
-                                        @RequestParam Integer pageNumber) {
-        log.info("incoming request for change item count in cart. item id {}, action {}", id, action);
+    public Mono<String> changeItemQuantityInCart(@PathVariable long id,
+                                                 @ModelAttribute ActionDto action,
+                                                 @ModelAttribute ViewParamDto viewParamDto) {
+        log.info("incoming request for change item quantity in cart. item id {}, action {}, viewParamDto {}",
+                id, action, viewParamDto);
 
-        orderService.changeItemCountInCart(id, action);
+        return orderService.changeItemQuantityInCart(id, actionMapper.to(action))
+                .flatMap(order ->
+                        Mono.just("redirect:/main/items" +
+                                "?" +
+                                "search=" + viewParamDto.search + "&" +
+                                "sort=" + viewParamDto.sort + "&" +
+                                "pageSize=" + viewParamDto.pageSize + "&" +
+                                "pageNumber=" + viewParamDto.pageNumber));
 
-        return "redirect:/main/items" +
-                "?" +
-                "search=" + search + "&" +
-                "sort=" + sort + "&" +
-                "pageSize=" + pageSize + "&" +
-                "pageNumber=" + pageNumber;
     }
 }

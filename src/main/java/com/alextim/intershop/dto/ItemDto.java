@@ -2,9 +2,9 @@ package com.alextim.intershop.dto;
 
 import lombok.*;
 
-@Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
 @ToString(exclude = {"description", "imgPath"})
 public class ItemDto {
     public long id;
@@ -12,5 +12,5 @@ public class ItemDto {
     public String description;
     public String imgPath;
     public int count;
-    public int price;
+    public double price;
 }

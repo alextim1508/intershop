@@ -1,41 +1,29 @@
 package com.alextim.intershop.entity;
 
 import com.alextim.intershop.utils.Status;
-import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
 
 
-@Entity
 @Table(name = "orders")
 @Getter
 @Setter
-@NoArgsConstructor
-@ToString(exclude = "orderItems")
+@ToString
 @EqualsAndHashCode(of = "id")
+@NoArgsConstructor
 public class Order {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-    private List<OrderItem> orderItems = new ArrayList<>();
-
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "TEXT DEFAULT 'CURRENT'")
+    @NonNull
     private Status status = Status.CURRENT;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    @CreationTimestamp
-    private ZonedDateTime created;
+    @NonNull
+    private ZonedDateTime created = ZonedDateTime.now();
 
-    @Temporal(TemporalType.TIMESTAMP)
     private ZonedDateTime completed;
 }

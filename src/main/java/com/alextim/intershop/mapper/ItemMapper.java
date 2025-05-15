@@ -8,6 +8,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public abstract class ItemMapper {
 
-    @Mapping(target = "count", source = "count")
-    public abstract ItemDto toDto(Item item, int count);
+    @Mapping(target = "count", source = "quantity")
+    public abstract ItemDto toDto(Item item, int quantity);
 }

@@ -1,22 +1,24 @@
 package com.alextim.intershop.service;
 
 import com.alextim.intershop.entity.Item;
+import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.entity.OrderItem;
 import com.alextim.intershop.exeption.ItemNotFoundException;
 import com.alextim.intershop.repository.ItemRepository;
+import com.alextim.intershop.repository.OrderItemRepository;
+import com.alextim.intershop.repository.OrderRepository;
 import com.alextim.intershop.utils.SortType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.AbstractMap.SimpleEntry;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import static com.alextim.intershop.utils.Status.CURRENT;
 
@@ -26,35 +28,45 @@ import static com.alextim.intershop.utils.Status.CURRENT;
 public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final OrderRepository orderRepository;
 
     @Override
-    public Item save(Item item) {
+    public Mono<Item> save(Item item) {
         log.info("saving item: {}", item);
-        return itemRepository.save(item);
+
+        return itemRepository.save(item)
+                .doOnNext(it -> log.info("saved item: {}", it));
     }
 
     @Override
-    public Entry<Item, Integer> findById(long id) {
-        log.info("find item by id {}", id);
+    public Mono<? extends Entry<Item, Integer>> findItemWithQuantityById(long itemId) {
+        log.info("findItemWithQuantityById. itemId: {}", itemId);
 
-        Item item = itemRepository.findById(id)
-                .orElseThrow(() -> new ItemNotFoundException(id));
-        log.info("item: {}", item);
+        Mono<Item> itemMono = itemRepository.findById(itemId)
+                .switchIfEmpty(Mono.error(() -> new ItemNotFoundException(itemId)))
+                .doOnNext(item -> log.info("found item by {} : {}", itemId, item));
 
-        Integer count = item.getOrderItems()
-                .stream()
-                .filter(it -> it.getOrder().getStatus().equals(CURRENT))
-                .map(OrderItem::getCount)
-                .findFirst()
-                .orElse(0);
-        log.info("count: {}", count);
+        Mono<Integer> quantityMono = orderRepository.findByStatus(CURRENT)
+                .switchIfEmpty(orderRepository.save(new Order()))
+                .next()
+                .flatMap(order -> orderItemRepository.findByItemIdAndOrderId(itemId, order.getId()))
+                .doOnNext(orderItem -> log.info("found order-item relationship : {}", orderItem))
+                .map(OrderItem::getQuantity)
+                .defaultIfEmpty(0);
 
-        return new SimpleEntry<>(item, count);
+        return Mono.zip(itemMono, quantityMono)
+                .map(tuple -> new SimpleImmutableEntry<>(tuple.getT1(), tuple.getT2()))
+                .doOnNext(entry -> log.info("item: {}, quantity: {}", entry.getKey(), entry.getValue()));
     }
 
     @Override
-    public Map<Item, Integer> search(String search, SortType sort, int pageNumber, int pageSize) {
-        log.info("search {}, sort {}, pageNumber {}, pageSize {}", search, sort, pageNumber, pageSize);
+    public Flux<? extends Entry<Item, Integer>> findItemsWithQuantity(String search,
+                                                                      SortType sort,
+                                                                      int pageNumber,
+                                                                      int pageSize) {
+        log.info("findItemsWithQuantity. search: \"{}\", sort: {}, pageNumber: {}, pageSize: {}",
+                search, sort, pageNumber, pageSize);
 
         PageRequest pageRequest = switch (sort) {
             case NO -> PageRequest.of(pageNumber, pageSize);
@@ -63,43 +75,39 @@ public class ItemServiceImpl implements ItemService {
         };
         log.info("pageRequest: {}", pageRequest);
 
-        List<Item> items;
+        Mono<Map<Long, Integer>> quantityItemIdsInCurrentOrderMono =
+                orderRepository.findByStatus(CURRENT)
+                        .switchIfEmpty(orderRepository.save(new Order()))
+                        .flatMap(order -> orderItemRepository.findByOrderId(order.getId()))
+                        .collectMap(OrderItem::getItemId, OrderItem::getQuantity)
+                        .doOnNext(map -> log.info("Quantity-item map in current order: {}", map));
+
+        Flux<Item> itemFlux;
         if (search.isEmpty()) {
-            items = itemRepository.findAll(pageRequest).getContent();
+            itemFlux = itemRepository.findAllBy(pageRequest);
         } else {
-            items = itemRepository.search(search, pageRequest);
+            itemFlux = itemRepository.findByTitleOrDescriptionContains(search, pageRequest);
         }
-        log.info("items: {}", items);
 
-        Map<Item, Integer> itemCounts = items.stream()
-                .collect(Collectors.toMap(
-                        item -> item,
-                        item -> item.getOrderItems().stream()
-                                .filter(it -> it.getOrder().getStatus().equals(CURRENT))
-                                .map(OrderItem::getCount)
-                                .findFirst()
-                                .orElse(0),
-                        (existing, replacement) -> replacement,
-                        LinkedHashMap::new
-                ));
-        log.info("item counts: {}", itemCounts);
-
-        return itemCounts;
+        return itemFlux
+                .doOnNext(item -> log.info("found item: {}", item))
+                .concatMap(item ->
+                        quantityItemIdsInCurrentOrderMono.map(quantityItemsMap ->
+                                new SimpleImmutableEntry<>(item, quantityItemsMap.getOrDefault(item.getId(), 0))
+                        )) //todo add cache
+                .doOnNext(entry -> log.info("item {} quantity: {}", entry.getKey(), entry.getValue()));
     }
 
     @Override
-    public long count(String search) {
-        log.info("count of items by search string {}", search);
+    public Mono<Long> count(String search) {
+        log.info("count of items by search string \"{}\"", search);
 
-        long count;
         if (search.isEmpty()) {
-            count = itemRepository.count();
+            return itemRepository.count()
+                    .doOnNext(count -> log.info("item count: {}", count));
         } else {
-            count = itemRepository.countBySearch(search);
+            return itemRepository.countByTitleOrDescriptionContains(search)
+                    .doOnNext(count -> log.info("item count: {}, search string: {}", count, search));
         }
-
-        log.info("item count: {}", count);
-
-        return count;
     }
 }
