@@ -3,7 +3,6 @@ package com.alextim.intershop.service;
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.entity.OrderItem;
-import com.alextim.intershop.exeption.CurrentOrderAbsentException;
 import com.alextim.intershop.exeption.OrderNotFoundException;
 import com.alextim.intershop.repository.ItemRepository;
 import com.alextim.intershop.repository.OrderItemRepository;
@@ -30,15 +29,15 @@ import static com.alextim.intershop.utils.Status.*;
 public class OrderServiceImpl implements OrderService {
 
     private final ItemRepository itemRepository;
-    private final OrderItemRepository orderItemRepository;
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Override
     public Mono<Order> save(Order order) {
-        log.info("saving order: {}", order);
+        log.info("save order: {}", order);
 
         return orderRepository.save(order)
-                .doOnNext(it -> log.info("saved order: {}", it));
+                .doOnNext(savedOrder -> log.info("saved order: {}", savedOrder));
     }
 
     @Override
@@ -46,7 +45,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("find all completed orders");
 
         return orderRepository.findByStatus(COMPLETED)
-                .doOnNext(order -> log.info("found completed orders: {}", order));
+                .doOnNext(order -> log.info("found completed order: {}", order));
     }
 
     @Override
@@ -55,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
 
         return orderRepository.findById(id)
                 .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(id)))
-                .doOnNext(order -> log.info("found order: {}", order));
+                .doOnNext(order -> log.info("found by id {} order: {}", id, order));
     }
 
     @Override
@@ -63,7 +62,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("find current order");
 
         return orderRepository.findByStatus(CURRENT)
-                .switchIfEmpty(orderRepository.save(new Order()))
+                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
                 .next()
                 .doOnNext(order -> log.info("found current order: {}", order));
     }
@@ -73,11 +72,12 @@ public class OrderServiceImpl implements OrderService {
         log.info("find items with quantity by orderId: {}", orderId);
 
         return orderRepository.findById(orderId)
-                .switchIfEmpty(Mono.error(CurrentOrderAbsentException::new))
-                .doOnNext(order -> log.info("found order: {}", order))
+                .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(orderId)))
+                .doOnNext(order -> log.info("found by id {} order: {}", orderId, order))
                 .flatMapMany(order -> orderItemRepository.findByOrderId(order.getId()))
-                .doOnNext(orderItem -> log.info("order item: {}", orderItem))
+                .doOnNext(orderItem -> log.info("found order-item: {}", orderItem))
                 .collectMap(OrderItem::getItemId, OrderItem::getQuantity)
+                .doOnNext(map -> log.info("quantity itemIds map: {}", map))
                 .flatMapMany(quantityItemIdsMap ->
                         itemRepository.findAllById(quantityItemIdsMap.keySet()).map(item ->
                                 new SimpleImmutableEntry<>(item, quantityItemIdsMap.getOrDefault(item.getId(), 0))
@@ -90,7 +90,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("complete current order");
 
         return orderRepository.findByStatus(CURRENT)
-                .switchIfEmpty(orderRepository.save(new Order()))
+                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
                 .next()
                 .flatMap(currentOrder -> {
                     currentOrder.setStatus(COMPLETED);
@@ -101,18 +101,18 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Mono<?> changeItemQuantityInCart(long itemId, Action action) {
+    public Mono<OrderItem> changeItemQuantityInCart(long itemId, Action action) {
         log.info("changeItemQuantityInCart. itemId {}, action: {}", itemId, action);
 
         return orderRepository.findByStatus(CURRENT)
-                .switchIfEmpty(orderRepository.save(new Order()))
+                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
                 .doOnNext(order -> log.info("cur order: {}", order))
                 .next()
                 .flatMap(order ->
                         orderItemRepository.findByItemIdAndOrderId(itemId, order.getId())
-                                .switchIfEmpty(Mono.just(new OrderItem(order.getId(), itemId, 0)))
+                                .switchIfEmpty(Mono.defer(() -> Mono.just(new OrderItem(order.getId(), itemId, 0))))
                 )
-                .doOnNext(orderItem -> log.info("orderItem: {}", orderItem))
+                .doOnNext(orderItem -> log.info("order-item: {}", orderItem))
                 .flatMap(orderItem -> {
                     if (action == PLUS) {
                         orderItem.setQuantity(orderItem.getQuantity() + 1);
@@ -124,17 +124,13 @@ public class OrderServiceImpl implements OrderService {
                             orderItem.setQuantity(0);
                         return orderItemRepository.save(orderItem);
                     } else if (action == DELETE) {
-                        return orderItemRepository.deleteById(orderItem.getId());
+                        return orderItemRepository.deleteById(orderItem.getId())
+                                .doOnSuccess(v -> log.info("order item {} is deleted", orderItem.getId()))
+                                .then(Mono.empty());
                     }
                     return Mono.error(new RuntimeException("Unknown action " + action));
                 })
-                .doOnNext(orderItem -> {
-                    if(orderItem.getClass() == OrderItem.class) {
-                        log.info("{} is updated", orderItem);
-                    } else {
-                        log.info("orderItem is deleted"); //todo add condition for deleting
-                    }
-                });
+                .doOnNext(orderItem -> log.info("{} is updated", orderItem));
     }
 
     @Override

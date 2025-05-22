@@ -28,12 +28,12 @@ import static com.alextim.intershop.utils.Status.CURRENT;
 public class ItemServiceImpl implements ItemService {
 
     private final ItemRepository itemRepository;
-    private final OrderItemRepository orderItemRepository;
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Override
     public Mono<Item> save(Item item) {
-        log.info("saving item: {}", item);
+        log.info("save item: {}", item);
 
         return itemRepository.save(item)
                 .doOnNext(it -> log.info("saved item: {}", it));
@@ -45,13 +45,13 @@ public class ItemServiceImpl implements ItemService {
 
         Mono<Item> itemMono = itemRepository.findById(itemId)
                 .switchIfEmpty(Mono.error(() -> new ItemNotFoundException(itemId)))
-                .doOnNext(item -> log.info("found item by {} : {}", itemId, item));
+                .doOnNext(item -> log.info("found by id {} item: {}", itemId, item));
 
         Mono<Integer> quantityMono = orderRepository.findByStatus(CURRENT)
-                .switchIfEmpty(orderRepository.save(new Order()))
+                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
                 .next()
                 .flatMap(order -> orderItemRepository.findByItemIdAndOrderId(itemId, order.getId()))
-                .doOnNext(orderItem -> log.info("found order-item relationship : {}", orderItem))
+                .doOnNext(orderItem -> log.info("found order-item: {}", orderItem))
                 .map(OrderItem::getQuantity)
                 .defaultIfEmpty(0);
 
@@ -77,10 +77,11 @@ public class ItemServiceImpl implements ItemService {
 
         Mono<Map<Long, Integer>> quantityItemIdsInCurrentOrderMono =
                 orderRepository.findByStatus(CURRENT)
-                        .switchIfEmpty(orderRepository.save(new Order()))
+                        .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
                         .flatMap(order -> orderItemRepository.findByOrderId(order.getId()))
                         .collectMap(OrderItem::getItemId, OrderItem::getQuantity)
-                        .doOnNext(map -> log.info("Quantity-item map in current order: {}", map));
+                        .doOnNext(map -> log.info("Quantity-item map in current order: {}", map))
+                        .cache();
 
         Flux<Item> itemFlux;
         if (search.isEmpty()) {
@@ -94,7 +95,7 @@ public class ItemServiceImpl implements ItemService {
                 .concatMap(item ->
                         quantityItemIdsInCurrentOrderMono.map(quantityItemsMap ->
                                 new SimpleImmutableEntry<>(item, quantityItemsMap.getOrDefault(item.getId(), 0))
-                        )) //todo add cache
+                        ))
                 .doOnNext(entry -> log.info("item {} quantity: {}", entry.getKey(), entry.getValue()));
     }
 

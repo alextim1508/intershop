@@ -3,6 +3,7 @@ package com.alextim.intershop.service;
 
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
+import com.alextim.intershop.entity.OrderItem;
 import com.alextim.intershop.utils.Action;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -23,7 +24,7 @@ public interface OrderService {
 
     Mono<Order> completeCurrentOrder();
 
-    Mono<?> changeItemQuantityInCart(long itemId, Action action);
+    Mono<OrderItem> changeItemQuantityInCart(long itemId, Action action);
 
     double calcPrice(Item item, int quantity);
 }
