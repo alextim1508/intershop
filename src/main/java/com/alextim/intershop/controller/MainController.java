@@ -40,7 +40,8 @@ public class MainController {
                                     @RequestParam(defaultValue = "NO") SortType sort,
                                     @RequestParam(defaultValue = "10") Integer pageSize,
                                     @RequestParam(defaultValue = "1") Integer pageNumber) {
-        log.info("incoming request for getting items");
+        log.info("incoming request for getting items. search: \"{}\", sort: {}, pageNumber: {}, pageSize: {}",
+                search, sort, pageNumber, pageSize);
 
         Flux<List<ItemDto>> partitionItemDto = itemService.findItemsWithQuantity(search, sort, pageNumber - 1, pageSize)
                 .map(entry -> itemMapper.toDto(entry.getKey(), entry.getValue()))

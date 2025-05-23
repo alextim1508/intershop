@@ -39,7 +39,7 @@ public class ItemController {
 
     @PostMapping("/{id}")
     public Mono<String> changeItemQuantityInCart(@PathVariable int id, @ModelAttribute ActionDto action) {
-        log.info("incoming request for change item quantity in cart. item id {}, action {}, viewParamDto {}",
+        log.info("incoming request for change item quantity in cart. item id {}, action {}",
                 id, action);
 
         return orderService.changeItemQuantityInCart(id, actionMapper.to(action))

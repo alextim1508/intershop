@@ -11,6 +11,6 @@ public class HomeController {
 
     @GetMapping
     public Mono<String> home() {
-        return Mono.just("redirect:main/items");
+        return Mono.just("redirect:/main/items");
     }
 }
