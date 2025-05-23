@@ -43,11 +43,8 @@ dependencies {
     //========== Database ==========
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
     implementation("org.postgresql:r2dbc-postgresql:1.0.7.RELEASE")
-
     implementation 'org.liquibase:liquibase-core'
     implementation "org.postgresql:postgresql:42.7.5"
-
-    testImplementation "io.r2dbc:r2dbc-h2:${h2Version}"
 
     //========== Mapper ==========
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
@@ -61,6 +58,11 @@ dependencies {
 
     //========== Test ==========
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:r2dbc'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'io.projectreactor:reactor-test'
 }
 
 test {

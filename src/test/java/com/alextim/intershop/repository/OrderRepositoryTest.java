@@ -1,6 +1,6 @@
 package com.alextim.intershop.repository;
 
-import com.alextim.intershop.PostgreSQLTestContainer;
+import com.alextim.intershop.SpringPostgreSQLTestContainer;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.utils.Status;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class OrderRepositoryTest extends PostgreSQLTestContainer {
+public class OrderRepositoryTest extends SpringPostgreSQLTestContainer {
 
     @Autowired
     OrderRepository orderRepository;
@@ -35,6 +35,4 @@ public class OrderRepositoryTest extends PostgreSQLTestContainer {
                 .extracting(Order::getId)
                 .isNotNull();
     }
-
-
 }

@@ -1,19 +1,17 @@
 package com.alextim.intershop.repository;
 
-import com.alextim.intershop.PostgreSQLTestContainer;
+import com.alextim.intershop.SpringPostgreSQLTestContainer;
 import com.alextim.intershop.entity.Item;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.r2dbc.core.DatabaseClient;
 
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class ItemRepositoryTest extends PostgreSQLTestContainer {
+public class ItemRepositoryTest extends SpringPostgreSQLTestContainer {
 
     @Autowired
     ItemRepository itemRepository;

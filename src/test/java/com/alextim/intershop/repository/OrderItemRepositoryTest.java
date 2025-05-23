@@ -1,20 +1,18 @@
 package com.alextim.intershop.repository;
 
-import com.alextim.intershop.PostgreSQLTestContainer;
+import com.alextim.intershop.SpringPostgreSQLTestContainer;
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.entity.OrderItem;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.r2dbc.core.DatabaseClient;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class OrderItemRepositoryTest extends PostgreSQLTestContainer {
+public class OrderItemRepositoryTest extends SpringPostgreSQLTestContainer {
 
     @Autowired
     ItemRepository itemRepository;
