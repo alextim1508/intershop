@@ -3,10 +3,9 @@ app:
 
 spring:
   r2dbc:
-    url: r2dbc:postgresql://localhost:5433/intershopdb
+    url: r2dbc:postgresql://db:5432/intershopdb
     username: postgres
     password: postgres
-    driver-class-name: org.postgresql.Driver
   liquibase:
     enabled: true
     url: jdbc:postgresql://db:5432/intershopdb

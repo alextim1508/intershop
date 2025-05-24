@@ -18,15 +18,14 @@ repositories {
 }
 
 ext {
-    postgresVersion = "0.8.6.RELEASE"
-    h2Version = "1.0.0.RELEASE"
+    postgresVersion = "42.7.5"
+    postgresR2dbcVersion = "1.0.7.RELEASE"
 
     lombokVersion = "1.18.36"
     mapstructVersion = "1.5.3.Final"
     lombokMapstructBindingVersion = "0.2.0"
 
     guavaVersion = "26.0-jre"
-    lombokVersion = "1.18.20"
 }
 
 bootJar {
@@ -42,9 +41,9 @@ dependencies {
 
     //========== Database ==========
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
-    implementation("org.postgresql:r2dbc-postgresql:1.0.7.RELEASE")
+    implementation "org.postgresql:r2dbc-postgresql:${postgresR2dbcVersion}"
     implementation 'org.liquibase:liquibase-core'
-    implementation "org.postgresql:postgresql:42.7.5"
+    implementation "org.postgresql:postgresql:${postgresVersion}"
 
     //========== Mapper ==========
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
