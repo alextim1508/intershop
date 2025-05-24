@@ -74,7 +74,10 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findById(orderId)
                 .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(orderId)))
                 .doOnNext(order -> log.info("found by id {} order: {}", orderId, order))
-                .flatMapMany(order -> orderItemRepository.findByOrderId(order.getId()))
+                .flatMapMany(order ->
+                        orderItemRepository.findByOrderId(order.getId())
+                                .filter(orderItem -> orderItem.getQuantity() > 0)
+                )
                 .doOnNext(orderItem -> log.info("found order-item: {}", orderItem))
                 .collectMap(OrderItem::getItemId, OrderItem::getQuantity)
                 .doOnNext(map -> log.info("quantity itemIds map: {}", map))
