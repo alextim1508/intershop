@@ -1,2 +1,4 @@
 rootProject.name = 'intershop'
+include 'app'
+include 'payment'
 

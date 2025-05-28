@@ -2,6 +2,7 @@ package com.alextim.intershop.repository;
 
 import com.alextim.intershop.AbstractRepoTestContainer;
 import com.alextim.intershop.entity.Item;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -24,7 +25,7 @@ public class ItemRepositoryTest extends AbstractRepoTestContainer {
                 .thenMany(itemRepository.findByTitleOrDescriptionContains("title1", PageRequest.of(0, 10)))
                 .toIterable();
 
-        assertThat(items)
+        Assertions.assertThat(items)
                 .withFailMessage("Items is empty")
                 .isNotEmpty()
                 .withFailMessage("Size of items is not 1")
@@ -43,7 +44,7 @@ public class ItemRepositoryTest extends AbstractRepoTestContainer {
                 .thenMany(itemRepository.findAllBy(PageRequest.of(0, 10)))
                 .toIterable();
 
-        assertThat(items)
+        Assertions.assertThat(items)
                 .withFailMessage("Items is empty")
                 .isNotEmpty()
                 .withFailMessage("Size of items is not 1")
@@ -60,7 +61,7 @@ public class ItemRepositoryTest extends AbstractRepoTestContainer {
                 .thenMany(itemRepository.findByTitleOrDescriptionContains("super", PageRequest.of(0, 10)))
                 .toIterable();
 
-        assertThat(items)
+        Assertions.assertThat(items)
                 .withFailMessage("Items is empty")
                 .isNotEmpty()
                 .withFailMessage("Size of items is not 1")
@@ -79,7 +80,7 @@ public class ItemRepositoryTest extends AbstractRepoTestContainer {
                 .then(itemRepository.countByTitleOrDescriptionContains("super"))
                 .block();
 
-        assertThat(count)
+        Assertions.assertThat(count)
                 .withFailMessage("Items is empty")
                 .isNotNull()
                 .withFailMessage("Size of items is not 1")

@@ -3,6 +3,7 @@ package com.alextim.intershop.repository;
 import com.alextim.intershop.AbstractRepoTestContainer;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.utils.Status;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -25,7 +26,7 @@ public class OrderRepositoryTest extends AbstractRepoTestContainer {
                 .thenMany(orderRepository.findByStatus(Status.CURRENT))
                 .toIterable();
 
-        assertThat(orders)
+        Assertions.assertThat(orders)
                 .withFailMessage("Orders is empty")
                 .isNotEmpty()
                 .withFailMessage("Size of orders is not 1")

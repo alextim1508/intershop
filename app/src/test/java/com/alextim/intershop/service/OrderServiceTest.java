@@ -9,7 +9,10 @@ import com.alextim.intershop.repository.OrderItemRepository;
 import com.alextim.intershop.repository.OrderRepository;
 import com.alextim.intershop.utils.Action;
 import com.alextim.intershop.utils.Status;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -46,13 +49,13 @@ class OrderServiceTest {
         Order order = new Order();
         order.setId(1L);
 
-        when(orderRepository.save(any(Order.class))).thenReturn(Mono.just(order));
+        Mockito.when(orderRepository.save(ArgumentMatchers.any(Order.class))).thenReturn(Mono.just(order));
 
         StepVerifier.create(orderService.save(order))
                 .expectNext(order)
                 .verifyComplete();
 
-        verify(orderRepository, times(1)).save(order);
+        Mockito.verify(orderRepository, Mockito.times(1)).save(order);
     }
 
     @Test
@@ -65,13 +68,13 @@ class OrderServiceTest {
         order2.setId(2L);
         order2.setStatus(COMPLETED);
 
-        when(orderRepository.findByStatus(any(Status.class))).thenReturn(Flux.just(order1, order2));
+        Mockito.when(orderRepository.findByStatus(ArgumentMatchers.any(Status.class))).thenReturn(Flux.just(order1, order2));
 
         StepVerifier.create(orderService.findAllCompletedOrders())
                 .expectNext(order1, order2)
                 .verifyComplete();
 
-        verify(orderRepository, times(1)).findByStatus(COMPLETED);
+        Mockito.verify(orderRepository, Mockito.times(1)).findByStatus(COMPLETED);
     }
 
     @Test
@@ -79,21 +82,21 @@ class OrderServiceTest {
         Order order = new Order();
         order.setId(1L);
 
-        when(orderRepository.findById(anyLong())).thenReturn(Mono.just(order));
+        Mockito.when(orderRepository.findById(ArgumentMatchers.anyLong())).thenReturn(Mono.just(order));
 
         StepVerifier.create(orderService.findById(1L))
                 .expectNext(order)
                 .verifyComplete();
 
-        verify(orderRepository, times(1)).findById(1L);
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(1L);
     }
 
     @Test
     void findById_shouldDoesNotFindOrderByIdTest() {
-        when(orderRepository.findById(anyLong())).thenReturn(Mono.empty());
+        Mockito.when(orderRepository.findById(ArgumentMatchers.anyLong())).thenReturn(Mono.empty());
 
         StepVerifier.create(orderService.findById(1L))
-                .expectErrorSatisfies(e -> assertThat(e).isInstanceOf(OrderNotFoundException.class))
+                .expectErrorSatisfies(e -> AssertionsForClassTypes.assertThat(e).isInstanceOf(OrderNotFoundException.class))
                 .verify();
     }
 
@@ -105,15 +108,15 @@ class OrderServiceTest {
         Order newOrder = new Order();
         newOrder.setId(2L);
 
-        when(orderRepository.save(any())).thenReturn(Mono.just(newOrder));
-        when(orderRepository.findByStatus(any(Status.class))).thenReturn(Flux.just(currentOrder));
+        Mockito.when(orderRepository.save(ArgumentMatchers.any())).thenReturn(Mono.just(newOrder));
+        Mockito.when(orderRepository.findByStatus(ArgumentMatchers.any(Status.class))).thenReturn(Flux.just(currentOrder));
 
         StepVerifier.create(orderService.findCurrentOrder())
                 .expectNext(currentOrder)
                 .verifyComplete();
 
-        verify(orderRepository, times(1)).findByStatus(CURRENT);
-        verify(orderRepository, never()).save(any());
+        Mockito.verify(orderRepository, Mockito.times(1)).findByStatus(CURRENT);
+        Mockito.verify(orderRepository, Mockito.never()).save(ArgumentMatchers.any());
     }
 
     @Test
@@ -121,15 +124,15 @@ class OrderServiceTest {
         Order newOrder = new Order();
         newOrder.setId(1L);
 
-        when(orderRepository.save(any())).thenReturn(Mono.just(newOrder));
-        when(orderRepository.findByStatus(any(Status.class))).thenReturn(Flux.empty());
+        Mockito.when(orderRepository.save(ArgumentMatchers.any())).thenReturn(Mono.just(newOrder));
+        Mockito.when(orderRepository.findByStatus(ArgumentMatchers.any(Status.class))).thenReturn(Flux.empty());
 
         StepVerifier.create(orderService.findCurrentOrder())
                 .expectNext(newOrder)
                 .verifyComplete();
 
-        verify(orderRepository, times(1)).findByStatus(CURRENT);
-        verify(orderRepository, times(1)).save(any());
+        Mockito.verify(orderRepository, Mockito.times(1)).findByStatus(CURRENT);
+        Mockito.verify(orderRepository, Mockito.times(1)).save(ArgumentMatchers.any());
     }
 
     @Test
@@ -148,9 +151,9 @@ class OrderServiceTest {
                 new OrderItem(order.getId(), item2.getId(), 20)
         );
 
-        when(orderRepository.findById(anyLong())).thenReturn(Mono.just(order));
-        when(orderItemRepository.findByOrderId(anyLong())).thenReturn(Flux.fromIterable(orderItems));
-        when(itemRepository.findAllById(anySet())).thenReturn(Flux.just(item1, item2));
+        Mockito.when(orderRepository.findById(ArgumentMatchers.anyLong())).thenReturn(Mono.just(order));
+        Mockito.when(orderItemRepository.findByOrderId(ArgumentMatchers.anyLong())).thenReturn(Flux.fromIterable(orderItems));
+        Mockito.when(itemRepository.findAllById(ArgumentMatchers.anySet())).thenReturn(Flux.just(item1, item2));
 
         StepVerifier.create(orderService.findItemsWithQuantityByOrderId(order.getId()))
                 .expectNextMatches(entry ->
@@ -159,14 +162,14 @@ class OrderServiceTest {
                         entry.equals(new SimpleImmutableEntry<>(item2, 20)))
                 .verifyComplete();
 
-        verify(orderRepository, times(1)).findById(order.getId());
-        verify(orderItemRepository, times(1)).findByOrderId(order.getId());
-        verify(itemRepository, times(1)).findAllById(Set.of(item1.getId(), item2.getId()));
+        Mockito.verify(orderRepository, Mockito.times(1)).findById(order.getId());
+        Mockito.verify(orderItemRepository, Mockito.times(1)).findByOrderId(order.getId());
+        Mockito.verify(itemRepository, Mockito.times(1)).findAllById(Set.of(item1.getId(), item2.getId()));
     }
 
     @Test
     public void findItemsWithQuantityByOrderId_shouldDoesNotFindItemsTest() {
-        when(orderRepository.findById(anyLong())).thenReturn(Mono.empty());
+        Mockito.when(orderRepository.findById(ArgumentMatchers.anyLong())).thenReturn(Mono.empty());
 
         StepVerifier.create(orderService.findItemsWithQuantityByOrderId(1L))
                 .expectError(OrderNotFoundException.class)
@@ -184,15 +187,15 @@ class OrderServiceTest {
         completedOrder.setStatus(COMPLETED);
         completedOrder.setCompleted(ZonedDateTime.now(ZoneId.of("Europe/Moscow")));
 
-        when(orderRepository.findByStatus(any(Status.class))).thenReturn(Flux.just(currentOrder));
-        when(orderRepository.save(currentOrder)).thenReturn(Mono.just(completedOrder));
+        Mockito.when(orderRepository.findByStatus(ArgumentMatchers.any(Status.class))).thenReturn(Flux.just(currentOrder));
+        Mockito.when(orderRepository.save(currentOrder)).thenReturn(Mono.just(completedOrder));
 
         StepVerifier.create(orderService.completeCurrentOrder())
                 .expectNext(completedOrder)
                 .verifyComplete();
 
-        verify(orderRepository, times(1)).findByStatus(CURRENT);
-        verify(orderRepository, times(1)).save(currentOrder);
+        Mockito.verify(orderRepository, Mockito.times(1)).findByStatus(CURRENT);
+        Mockito.verify(orderRepository, Mockito.times(1)).save(currentOrder);
     }
 
     @Test
@@ -200,15 +203,15 @@ class OrderServiceTest {
         Order newOrder = new Order();
         newOrder.setId(2L);
 
-        when(orderRepository.findByStatus(any(Status.class))).thenReturn(Flux.empty());
-        when(orderRepository.save(any(Order.class))).thenReturn(Mono.just(newOrder));
+        Mockito.when(orderRepository.findByStatus(ArgumentMatchers.any(Status.class))).thenReturn(Flux.empty());
+        Mockito.when(orderRepository.save(ArgumentMatchers.any(Order.class))).thenReturn(Mono.just(newOrder));
 
         StepVerifier.create(orderService.completeCurrentOrder())
                 .expectNext(newOrder)
                 .verifyComplete();
 
-        verify(orderRepository, times(1)).findByStatus(CURRENT);
-        verify(orderRepository, times(2)).save(any(Order.class));
+        Mockito.verify(orderRepository, Mockito.times(1)).findByStatus(CURRENT);
+        Mockito.verify(orderRepository, Mockito.times(2)).save(ArgumentMatchers.any(Order.class));
     }
 
     @Test
@@ -222,9 +225,9 @@ class OrderServiceTest {
         OrderItem orderItem = new OrderItem(currentOrder.getId(), item.getId(), 3);
         OrderItem updatedOderItem = new OrderItem(orderItem.getOrderId(), orderItem.getItemId(), orderItem.getQuantity() + 1);
 
-        when(orderRepository.findByStatus(any(Status.class))).thenReturn(Flux.just(currentOrder));
-        when(orderItemRepository.findByItemIdAndOrderId(anyLong(), anyLong())).thenReturn(Mono.just(orderItem));
-        when(orderItemRepository.save(any(OrderItem.class))).thenReturn(Mono.just(updatedOderItem));
+        Mockito.when(orderRepository.findByStatus(ArgumentMatchers.any(Status.class))).thenReturn(Flux.just(currentOrder));
+        Mockito.when(orderItemRepository.findByItemIdAndOrderId(ArgumentMatchers.anyLong(), ArgumentMatchers.anyLong())).thenReturn(Mono.just(orderItem));
+        Mockito.when(orderItemRepository.save(ArgumentMatchers.any(OrderItem.class))).thenReturn(Mono.just(updatedOderItem));
 
         StepVerifier.create(orderService.changeItemQuantityInCart(item.getId(), Action.PLUS))
                 .expectNextMatches(it -> it.getQuantity() == orderItem.getQuantity())
@@ -232,12 +235,12 @@ class OrderServiceTest {
 
         assertThat(orderItem).extracting(OrderItem::getQuantity).isEqualTo(updatedOderItem.getQuantity());
 
-        verify(orderRepository, times(1)).findByStatus(CURRENT);
-        verify(orderRepository, times(0)).save(any(Order.class));
+        Mockito.verify(orderRepository, Mockito.times(1)).findByStatus(CURRENT);
+        Mockito.verify(orderRepository, Mockito.times(0)).save(ArgumentMatchers.any(Order.class));
 
-        verify(orderItemRepository, times(1)).findByItemIdAndOrderId(item.getId(), currentOrder.getId());
-        verify(orderItemRepository, times(1)).save(orderItem);
-        verify(orderItemRepository, times(0)).deleteById(anyLong());
+        Mockito.verify(orderItemRepository, Mockito.times(1)).findByItemIdAndOrderId(item.getId(), currentOrder.getId());
+        Mockito.verify(orderItemRepository, Mockito.times(1)).save(orderItem);
+        Mockito.verify(orderItemRepository, Mockito.times(0)).deleteById(ArgumentMatchers.anyLong());
     }
 
     @Test
@@ -251,16 +254,16 @@ class OrderServiceTest {
         OrderItem orderItem = new OrderItem(order.getId(), item.getId(), 5);
         orderItem.setId(1L);
 
-        when(orderRepository.findByStatus(any(Status.class))).thenReturn(Flux.just(order));
-        when(orderItemRepository.findByItemIdAndOrderId(item.getId(), order.getId())).thenReturn(Mono.just(orderItem));
-        when(orderItemRepository.deleteById(orderItem.getId())).thenReturn(Mono.empty());
+        Mockito.when(orderRepository.findByStatus(ArgumentMatchers.any(Status.class))).thenReturn(Flux.just(order));
+        Mockito.when(orderItemRepository.findByItemIdAndOrderId(item.getId(), order.getId())).thenReturn(Mono.just(orderItem));
+        Mockito.when(orderItemRepository.deleteById(orderItem.getId())).thenReturn(Mono.empty());
 
         StepVerifier.create(orderService.changeItemQuantityInCart(item.getId(), Action.DELETE))
                 .verifyComplete();
 
-        verify(orderRepository).findByStatus(CURRENT);
-        verify(orderItemRepository).findByItemIdAndOrderId(item.getId(), order.getId());
-        verify(orderItemRepository).deleteById(orderItem.getId());
+        Mockito.verify(orderRepository).findByStatus(CURRENT);
+        Mockito.verify(orderItemRepository).findByItemIdAndOrderId(item.getId(), order.getId());
+        Mockito.verify(orderItemRepository).deleteById(orderItem.getId());
     }
 
     @Test

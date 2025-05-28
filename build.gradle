@@ -1,70 +1,39 @@
-plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.4.4'
-    id 'io.spring.dependency-management' version '1.1.7'
-}
+group = 'com.alextim'
+version = '1.0-SNAPSHOT'
 
-group 'com.alextim'
-version '1.0-SNAPSHOT'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+        classpath "io.spring.gradle:dependency-management-plugin:${dependencyManagementVersion}"
     }
 }
 
-repositories {
-    mavenCentral()
+
+subprojects {
+    repositories {
+        mavenCentral()
+    }
+
+    ext {
+        postgresVersion = "42.7.5"
+        postgresR2dbcVersion = "1.0.7.RELEASE"
+
+        lombokVersion = "1.18.36"
+        mapstructVersion = "1.5.3.Final"
+        lombokMapstructBindingVersion = "0.2.0"
+
+        guavaVersion = "26.0-jre"
+    }
+
+    apply(plugin: 'java')
+    apply(plugin: 'org.springframework.boot')
+    apply(plugin: 'io.spring.dependency-management')
+
+    test {
+        useJUnitPlatform()
+    }
 }
 
-ext {
-    postgresVersion = "42.7.5"
-    postgresR2dbcVersion = "1.0.7.RELEASE"
-
-    lombokVersion = "1.18.36"
-    mapstructVersion = "1.5.3.Final"
-    lombokMapstructBindingVersion = "0.2.0"
-
-    guavaVersion = "26.0-jre"
-}
-
-bootJar {
-    archiveBaseName = 'intershop'
-    archiveVersion = ''
-}
-
-dependencies {
-    //========== Web ==========
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    //========== Database ==========
-    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
-    implementation "org.postgresql:r2dbc-postgresql:${postgresR2dbcVersion}"
-    implementation 'org.liquibase:liquibase-core'
-    implementation "org.postgresql:postgresql:${postgresVersion}"
-
-    //========== Mapper ==========
-    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
-    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
-    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
-
-    //========== Utils ==========
-    implementation "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor 'org.projectlombok:lombok'
-    implementation("com.google.guava:guava:${guavaVersion}")
-
-    //========== Test ==========
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:postgresql'
-    testImplementation 'com.redis:testcontainers-redis:2.2.2'
-    testImplementation 'org.testcontainers:r2dbc'
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'io.projectreactor:reactor-test'
-}
-
-test {
-    useJUnitPlatform()
-}

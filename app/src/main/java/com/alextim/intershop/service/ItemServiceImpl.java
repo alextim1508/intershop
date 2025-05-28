@@ -1,13 +1,14 @@
 package com.alextim.intershop.service;
 
 import com.alextim.intershop.entity.Item;
-import com.alextim.intershop.entity.Order;
-import com.alextim.intershop.entity.OrderItem;
-import com.alextim.intershop.exeption.ItemNotFoundException;
 import com.alextim.intershop.repository.ItemRepository;
 import com.alextim.intershop.repository.OrderItemRepository;
 import com.alextim.intershop.repository.OrderRepository;
 import com.alextim.intershop.utils.SortType;
+import com.alextim.intershop.utils.Status;
+import com.alextim.intershop.entity.Order;
+import com.alextim.intershop.entity.OrderItem;
+import com.alextim.intershop.exeption.ItemNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
@@ -21,10 +22,6 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import static com.alextim.intershop.utils.Status.CURRENT;
 
 @Service
 @RequiredArgsConstructor
@@ -65,7 +62,7 @@ public class ItemServiceImpl implements ItemService {
                                 .then(Mono.just(item))
                 );
 
-        Mono<Integer> quantityMono = orderRepository.findByStatus(CURRENT)
+        Mono<Integer> quantityMono = orderRepository.findByStatus(Status.CURRENT)
                 .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
                 .next()
                 .flatMap(order -> orderItemRepository.findByItemIdAndOrderId(itemId, order.getId()))
@@ -94,7 +91,7 @@ public class ItemServiceImpl implements ItemService {
         log.info("pageRequest: {}", pageRequest);
 
         Mono<Map<Long, Integer>> quantityItemIdsInCurrentOrderMono =
-                orderRepository.findByStatus(CURRENT)
+                orderRepository.findByStatus(Status.CURRENT)
                         .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
                         .flatMap(order -> orderItemRepository.findByOrderId(order.getId()))
                         .collectMap(OrderItem::getItemId, OrderItem::getQuantity)
