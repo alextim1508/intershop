@@ -10,6 +10,7 @@ import com.alextim.intershop.repository.OrderRepository;
 import com.alextim.intershop.utils.SortType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.reactivestreams.Publisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,9 @@ import reactor.core.publisher.Mono;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.StringJoiner;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.alextim.intershop.utils.Status.CURRENT;
 
@@ -30,22 +34,36 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ItemCacheService itemCacheService;
 
     @Override
     public Mono<Item> save(Item item) {
         log.info("save item: {}", item);
 
         return itemRepository.save(item)
-                .doOnNext(it -> log.info("saved item: {}", it));
+                .doOnNext(savedItem -> log.info("saved item: {}", savedItem))
+                .flatMap(savedItem ->
+                        itemCacheService.putItem(savedItem)
+                                .then(Mono.just(savedItem))
+                );
     }
 
     @Override
     public Mono<? extends Entry<Item, Integer>> findItemWithQuantityById(long itemId) {
         log.info("findItemWithQuantityById. itemId: {}", itemId);
 
-        Mono<Item> itemMono = itemRepository.findById(itemId)
-                .switchIfEmpty(Mono.error(() -> new ItemNotFoundException(itemId)))
-                .doOnNext(item -> log.info("found by id {} item: {}", itemId, item));
+        Mono<Item> itemFromRepoMono = Mono.defer(() ->
+                itemRepository.findById(itemId)
+                    .switchIfEmpty(Mono.error(() -> new ItemNotFoundException(itemId)))
+                    .doOnNext(item -> log.info("found by id {} item: {}", itemId, item))
+        );
+
+        Mono<Item> itemMono = itemCacheService.getItem(itemId)
+                .switchIfEmpty(itemFromRepoMono)
+                .flatMap(item ->
+                        itemCacheService.putItem(item)
+                                .then(Mono.just(item))
+                );
 
         Mono<Integer> quantityMono = orderRepository.findByStatus(CURRENT)
                 .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
@@ -83,12 +101,24 @@ public class ItemServiceImpl implements ItemService {
                         .doOnNext(map -> log.info("Quantity-item map in current order: {}", map))
                         .cache();
 
-        Flux<Item> itemFlux;
-        if (search.isEmpty()) {
-            itemFlux = itemRepository.findAllBy(pageRequest);
-        } else {
-            itemFlux = itemRepository.findByTitleOrDescriptionContains(search, pageRequest);
-        }
+        Flux<Item> itemFromRepoFlux = Flux.defer(() -> {
+            if (search.isEmpty()) {
+                return itemRepository.findAllBy(pageRequest);
+            } else {
+                return itemRepository.findByTitleOrDescriptionContains(search, pageRequest);
+            }
+        });
+
+        String fullKey = generateCacheKey(search, sort, pageNumber, pageSize);
+
+        Flux<Item> itemFlux = itemCacheService.getItemList(fullKey)
+                .switchIfEmpty(itemFromRepoFlux)
+                .collectList()
+                .flatMap(items ->
+                        itemCacheService.putItemList(fullKey, items)
+                                .then(Mono.just(items))
+                )
+                .flatMapMany(Flux::fromIterable);
 
         return itemFlux
                 .doOnNext(item -> log.info("found item: {}", item))
@@ -99,16 +129,44 @@ public class ItemServiceImpl implements ItemService {
                 .doOnNext(entry -> log.info("item {} quantity: {}", entry.getKey(), entry.getValue()));
     }
 
+    static String generateCacheKey(String search,
+                            SortType sort,
+                            int pageNumber,
+                            int pageSize) {
+        return new StringJoiner("-")
+                .add(search.isEmpty() ? "EMPTY" : search)
+                .add(sort.name())
+                .add(Integer.toString(pageNumber))
+                .add(Integer.toString(pageSize))
+                .toString();
+
+    }
+
     @Override
     public Mono<Long> count(String search) {
         log.info("count of items by search string \"{}\"", search);
 
-        if (search.isEmpty()) {
-            return itemRepository.count()
-                    .doOnNext(count -> log.info("item count: {}", count));
-        } else {
-            return itemRepository.countByTitleOrDescriptionContains(search)
-                    .doOnNext(count -> log.info("item count: {}, search string: {}", count, search));
-        }
+        Mono<Long> countFromRepoMono = Mono.defer(() -> {
+            if (search.isEmpty()) {
+                return itemRepository.count()
+                        .doOnNext(count -> log.info("item count: {}", count));
+            } else {
+                return itemRepository.countByTitleOrDescriptionContains(search)
+                        .doOnNext(count -> log.info("item count: {}, search string: {}", count, search));
+            }
+        });
+
+        String fullKey = generateCacheKey(search);
+
+        return itemCacheService.getItemCount(fullKey)
+                .switchIfEmpty(countFromRepoMono)
+                .flatMap(count ->
+                        itemCacheService.putItemCount(fullKey, count)
+                                .then(Mono.just(count))
+                );
+    }
+
+    static String generateCacheKey(String str) {
+        return str.isEmpty() ? "EMPTY" : str;
     }
 }
