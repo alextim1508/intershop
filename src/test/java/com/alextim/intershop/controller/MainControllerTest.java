@@ -1,6 +1,6 @@
 package com.alextim.intershop.controller;
 
-import com.alextim.intershop.WebFluxPostgreSQLTestContainer;
+import com.alextim.intershop.AbstractControllerTestContainer;
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.repository.ItemRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +13,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class MainControllerTest extends WebFluxPostgreSQLTestContainer {
+public class MainControllerTest extends AbstractControllerTestContainer {
 
     @Autowired
     ItemRepository itemRepository;

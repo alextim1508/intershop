@@ -17,7 +17,7 @@ import static com.alextim.intershop.service.ItemCacheServiceImpl.CacheName.*;
 
 @AutoConfigureWebTestClient
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ControllerTestContainer {
+public abstract class AbstractControllerTestContainer {
 
     @Autowired
     protected WebTestClient webTestClient;

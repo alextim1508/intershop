@@ -22,5 +22,14 @@ services:
     volumes:
       - db-data:/val/lib/postgresql/data
 
+  cache-db:
+    image: redis:7.4-bookworm
+    container_name: redis
+    ports:
+      - 6379:6379
+    command: ["redis-server"]
+
+
+
 volumes:
   db-data:

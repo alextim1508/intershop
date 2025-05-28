@@ -9,7 +9,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 @SpringBootTest
-public class RepoTestContainer {
+public abstract class AbstractRepoTestContainer {
 
     @Container
     @ServiceConnection

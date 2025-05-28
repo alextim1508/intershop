@@ -27,7 +27,7 @@ public class ItemCacheServiceImpl implements ItemCacheService {
     @Value("${spring.cache.redis.time-to-live-seconds}")
     public Long ttl;
 
-    enum CacheName {
+    public enum CacheName {
         ITEM,
         ITEMS_LIST,
         ITEMS_COUNT

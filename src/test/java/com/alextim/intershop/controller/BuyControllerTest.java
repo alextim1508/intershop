@@ -1,12 +1,12 @@
 package com.alextim.intershop.controller;
 
-import com.alextim.intershop.WebFluxPostgreSQLTestContainer;
+import com.alextim.intershop.AbstractControllerTestContainer;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-public class BuyControllerTest extends WebFluxPostgreSQLTestContainer {
+public class BuyControllerTest extends AbstractControllerTestContainer {
 
     @Autowired
     OrderRepository orderRepository;

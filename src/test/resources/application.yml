@@ -1,2 +1,7 @@
 app:
   partition-count: 4
+
+spring:
+  cache:
+    redis:
+      time-to-live-seconds: 10

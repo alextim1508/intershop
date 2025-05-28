@@ -1,6 +1,6 @@
 package com.alextim.intershop.repository;
 
-import com.alextim.intershop.SpringPostgreSQLTestContainer;
+import com.alextim.intershop.AbstractRepoTestContainer;
 import com.alextim.intershop.entity.Item;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +11,7 @@ import java.util.Arrays;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class ItemRepositoryTest extends SpringPostgreSQLTestContainer {
+public class ItemRepositoryTest extends AbstractRepoTestContainer {
 
     @Autowired
     ItemRepository itemRepository;

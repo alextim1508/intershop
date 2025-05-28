@@ -14,8 +14,10 @@ spring:
   sql:
     init:
       mode: always
-
-logging:
-  level:
-    org.springframework.r2dbc.core.DefaultDatabaseClient: INFO
-
+  data:
+    redis:
+      host: cache-db
+      port: 6379
+  cache:
+    redis:
+      time-to-live-seconds: 60
