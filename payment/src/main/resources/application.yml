@@ -1,0 +1,16 @@
+server:
+  port: 8081
+
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://payment-db:5432/paymentdb
+    username: postgres
+    password: postgres
+  liquibase:
+    enabled: true
+    url: jdbc:postgresql://payment-db:5432/paymentdb
+    user: postgres
+    password: postgres
+  sql:
+    init:
+      mode: always
