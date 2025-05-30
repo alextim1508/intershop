@@ -1,0 +1,146 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+    description: Local development server
+
+tags:
+  - name: Balance
+    description: Endpoints related to checking user balance
+  - name: Payments
+    description: Endpoints related to making payments
+
+paths:
+  /balance:
+    get:
+      summary: Get user's current balance
+      tags:
+        - Balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BalanceRequest"
+      responses:
+        "200":
+          description: Current balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-content-type: application/json
+      x-accepts:
+        - application/json
+  /pay:
+    post:
+      summary: Process a payment by deducting amount from user's balance
+      tags:
+        - Payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+      responses:
+        "200":
+          description: Payment successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+        "400":
+          description: Insufficient funds or invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-content-type: application/json
+      x-accepts:
+        - application/json
+components:
+  schemas:
+    BalanceRequest:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          format: int64
+      example:
+        user_id: 1
+    BalanceResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          format: int64
+        balance:
+          type: number
+          format: double
+      example:
+        user_id: 1
+        balance: 5000
+    PaymentRequest:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          format: int64
+        amount:
+          type: number
+          format: double
+      example:
+        user_id: 1
+        amount: 2000
+    PaymentResponse:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          format: int64
+        new_balance:
+          type: number
+          format: double
+        success:
+          type: boolean
+        message:
+          type: string
+      example:
+        user_id: 1
+        new_balance: 3000
+        success: true
+        message: "Payment successful"
+    ErrorResponse:
+      type: object
+      example:
+        error: error
+      properties:
+        error:
+          type: string
