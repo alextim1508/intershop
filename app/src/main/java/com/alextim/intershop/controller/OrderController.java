@@ -45,7 +45,9 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public Mono<Rendering> getOrder(@PathVariable long id, @RequestParam(defaultValue = "false") boolean newOrder) {
+    public Mono<Rendering> getOrder(@PathVariable long id,
+                                    @RequestParam(defaultValue = "false") boolean newOrder,
+                                    @RequestParam(defaultValue = "false") boolean rejectedOrder) {
         log.info("incoming request for getting order by id: {}", id);
 
         return orderService.findById(id)
@@ -54,6 +56,7 @@ public class OrderController {
                 .map(orderDto -> Rendering.view("order")
                         .modelAttribute("order", orderDto)
                         .modelAttribute("newOrder", newOrder)
+                        .modelAttribute("rejectedOrder", rejectedOrder)
                         .build()
                 );
     }

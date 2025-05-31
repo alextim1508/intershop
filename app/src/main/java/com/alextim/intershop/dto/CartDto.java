@@ -15,4 +15,6 @@ public class CartDto {
     public List<ItemDto> items;
     public double total;
     public boolean empty;
+    private boolean availablePayment;
+    private boolean possibleToBuy;
 }

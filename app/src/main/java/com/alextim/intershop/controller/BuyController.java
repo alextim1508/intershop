@@ -1,9 +1,12 @@
 package com.alextim.intershop.controller;
 
+import com.alextim.intershop.dto.AmountDto;
 import com.alextim.intershop.service.OrderService;
+import com.alextim.intershop.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import reactor.core.publisher.Mono;
@@ -16,14 +19,21 @@ public class BuyController {
 
     private final OrderService orderService;
 
-    @PostMapping
-    public Mono<String> buy() {
-        log.info("incoming request for buying");
+    private final PaymentService paymentService;
 
-        return orderService.completeCurrentOrder()
-                .flatMap(completedOrder -> Mono.just("redirect:/orders/" + completedOrder.getId() +
-                        "?" +
-                        "newOrder=" + true)
+    @PostMapping
+    public Mono<String> buy(@ModelAttribute AmountDto amountDto) {
+        log.info("incoming request for buying of amount: {}", amountDto.amount);
+
+        return paymentService.payment(amountDto.amount)
+                .map(response -> response.getBody().getSuccess())
+                .flatMap(success ->
+                        orderService.completeCurrentOrder()
+                                .flatMap(completedOrder -> Mono.just("redirect:/orders/" + completedOrder.getId() +
+                                        "?" +
+                                        "newOrder=" + success + "&" +
+                                        "rejectedOrder=" + !success)
+                                )
                 );
     }
 }
