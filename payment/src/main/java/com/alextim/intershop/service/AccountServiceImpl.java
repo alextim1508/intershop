@@ -13,7 +13,14 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 @Slf4j
 public class AccountServiceImpl implements AccountService {
+
     private final AccountRepository accountRepository;
+
+    @Override
+    public Mono<Account> save(Account account) {
+        return accountRepository.save(account)
+                .doOnNext(savedAccount -> log.info("Account {} is saved", savedAccount));
+    }
 
     @Override
     public Mono<Double> getBalanceByUserId(long userId) {

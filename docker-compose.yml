@@ -10,9 +10,9 @@ services:
     volumes:
       - ./app/build/libs/intershop.jar:/app/intershop.jar
     command: java -jar /app/intershop.jar
-  db:
+  app-db:
     image: postgres:13.3
-    container_name: db
+    container_name: app-db
     ports:
       - 5433:5432
     environment:
@@ -20,16 +20,34 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: intershopdb
     volumes:
-      - db-data:/val/lib/postgresql/data
-
-  cache-db:
+      - app-db-data:/val/lib/postgresql/data
+  app-cache-db:
     image: redis:7.4-bookworm
-    container_name: redis
+    container_name: app-cache-db
     ports:
       - 6379:6379
     command: ["redis-server"]
-
-
+  payment:
+    image: openjdk:21-jdk-slim
+    container_name: payment
+    ports:
+      - 8081:8081
+    working_dir: /app
+    volumes:
+      - ./payment/build/libs/payment.jar:/app/payment.jar
+    command: java -jar /app/payment.jar
+  payment-db:
+    image: postgres:13.3
+    container_name: payment-db
+    ports:
+      - 5434:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: paymentdb
+    volumes:
+      - payment-db-data:/val/lib/postgresql/data
 
 volumes:
-  db-data:
+  app-db-data:
+  payment-db-data:

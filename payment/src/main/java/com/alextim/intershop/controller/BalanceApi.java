@@ -5,9 +5,7 @@
  */
 package com.alextim.intershop.controller;
 
-import com.alextim.intershop.dto.BalanceRequest;
 import com.alextim.intershop.dto.BalanceResponse;
-import com.alextim.intershop.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,7 +43,7 @@ public interface BalanceApi {
     /**
      * GET /balance : Get user&#39;s current balance
      *
-     * @param balanceRequest  (required)
+     * @param userId User&#39;s ID (required)
      * @return Current balance retrieved successfully (status code 200)
      *         or User not found (status code 404)
      *         or Internal server error (status code 500)
@@ -59,22 +57,21 @@ public interface BalanceApi {
                 @Content(mediaType = "application/json", schema = @Schema(implementation = BalanceResponse.class))
             }),
             @ApiResponse(responseCode = "404", description = "User not found", content = {
-                @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                @Content(mediaType = "application/json", schema = @Schema(implementation = BalanceResponse.class))
             }),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = {
-                @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                @Content(mediaType = "application/json", schema = @Schema(implementation = BalanceResponse.class))
             })
         }
     )
     @RequestMapping(
         method = RequestMethod.GET,
         value = "/balance",
-        produces = { "application/json" },
-        consumes = { "application/json" }
+        produces = { "application/json" }
     )
     
     Mono<ResponseEntity<BalanceResponse>> balanceGet(
-        @Parameter(name = "BalanceRequest", description = "", required = true) @Valid @RequestBody Mono<BalanceRequest> balanceRequest,
+        @NotNull @Parameter(name = "userId", description = "User's ID", required = true, in = ParameterIn.QUERY) @Valid @RequestParam(value = "userId", required = true) Long userId,
         @Parameter(hidden = true) final ServerWebExchange exchange
     );
 

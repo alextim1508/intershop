@@ -5,7 +5,6 @@
  */
 package com.alextim.intershop.controller;
 
-import com.alextim.intershop.dto.ErrorResponse;
 import com.alextim.intershop.dto.PaymentRequest;
 import com.alextim.intershop.dto.PaymentResponse;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -60,13 +59,13 @@ public interface PaymentsApi {
                 @Content(mediaType = "application/json", schema = @Schema(implementation = PaymentResponse.class))
             }),
             @ApiResponse(responseCode = "400", description = "Insufficient funds or invalid request", content = {
-                @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                @Content(mediaType = "application/json", schema = @Schema(implementation = PaymentResponse.class))
             }),
             @ApiResponse(responseCode = "404", description = "User not found", content = {
-                @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                @Content(mediaType = "application/json", schema = @Schema(implementation = PaymentResponse.class))
             }),
             @ApiResponse(responseCode = "500", description = "Internal server error", content = {
-                @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
+                @Content(mediaType = "application/json", schema = @Schema(implementation = PaymentResponse.class))
             })
         }
     )
