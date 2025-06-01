@@ -2,14 +2,12 @@ version: '3.8'
 
 services:
   app:
-    image: openjdk:21-jdk-slim
-    container_name: intershop
+    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile-app
     ports:
       - 8080:8080
-    working_dir: /app
-    volumes:
-      - ./app/build/libs/intershop.jar:/app/intershop.jar
-    command: java -jar /app/intershop.jar
   app-db:
     image: postgres:13.3
     container_name: app-db
@@ -28,13 +26,10 @@ services:
       - 6379:6379
     command: ["redis-server"]
   payment:
-    image: openjdk:21-jdk-slim
     container_name: payment
-    ports:
-      - 8081:8081
-    working_dir: /app
-    volumes:
-      - ./payment/build/libs/payment.jar:/app/payment.jar
+    build:
+      context: .
+      dockerfile: Dockerfile-payment
     command: java -jar /app/payment.jar
   payment-db:
     image: postgres:13.3

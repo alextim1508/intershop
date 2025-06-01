@@ -1,0 +1,17 @@
+FROM gradle:8.5-jdk21 AS builder
+
+WORKDIR /intershop
+
+COPY --chown=gradle:gradle . .
+
+RUN gradle :payment:clean :payment:bootJar
+
+FROM openjdk:21-jdk
+
+COPY --from=builder /intershop/payment/build/libs/*.jar app.jar
+
+EXPOSE 8081
+
+RUN chmod +x /app.jar
+
+ENTRYPOINT ["java", "-jar", "/app.jar"]
