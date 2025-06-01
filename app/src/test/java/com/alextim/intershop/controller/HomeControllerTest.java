@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 public class HomeControllerTest extends AbstractControllerTestContainer {
 
     @Test
-    void home_shouldRedirectTest() throws Exception {
+    void home_shouldRedirectTest() {
         webTestClient.get()
                 .uri("/")
                 .exchange()

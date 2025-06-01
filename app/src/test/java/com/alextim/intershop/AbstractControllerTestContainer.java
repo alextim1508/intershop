@@ -1,11 +1,14 @@
 package com.alextim.intershop;
 
+import com.alextim.intershop.service.PaymentService;
 import com.redis.testcontainers.RedisContainer;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -17,6 +20,10 @@ import static com.alextim.intershop.service.ItemCacheServiceImpl.CacheName.*;
 
 @AutoConfigureWebTestClient
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ComponentScan(excludeFilters = @ComponentScan.Filter(
+        type = FilterType.ASSIGNABLE_TYPE, value =PaymentService.class)
+
+)
 public abstract class AbstractControllerTestContainer {
 
     @Autowired

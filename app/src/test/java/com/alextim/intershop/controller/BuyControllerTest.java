@@ -19,6 +19,6 @@ public class BuyControllerTest extends AbstractControllerTestContainer {
                 .uri("/buy")
                 .exchange()
                 .expectStatus().is3xxRedirection()
-                .expectHeader().location("/orders/" + order.getId() + "?newOrder=true");
+                .expectHeader().location("/orders/" + order.getId() + "?newOrder=true&rejectedOrder=false");
     }
 }
