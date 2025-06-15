@@ -39,38 +39,39 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Flux<Order> findAllCompletedOrders() {
-        log.info("find all completed orders");
+    public Flux<Order> findAllCompletedOrders(long userId) {
+        log.info("find all completed orders. userId: {}", userId);
 
-        return orderRepository.findByStatus(Status.COMPLETED)
+        return orderRepository.findByUserIdAndStatus(userId , Status.COMPLETED)
                 .doOnNext(order -> log.info("found completed order: {}", order));
     }
 
     @Override
-    public Mono<Order> findById(long id) {
-        log.info("find order by id {}", id);
+    public Mono<Order> findById(long userId, long orderId) {
+        log.info("find order by orderId {}", orderId);
 
-        return orderRepository.findById(id)
-                .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(id)))
-                .doOnNext(order -> log.info("found by id {} order: {}", id, order));
+        return orderRepository.findById(orderId)
+                .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(userId, orderId)))
+                .doOnNext(order -> log.info("found by orderId {} order: {}", orderId, order));
     }
 
     @Override
-    public Mono<Order> findCurrentOrder() {
-        log.info("find current order");
+    public Mono<Order> findCurrentOrder(long userId) {
+        log.info("find current order. userId {}", userId);
 
-        return orderRepository.findByStatus(Status.CURRENT)
-                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
+        return orderRepository.findByUserIdAndStatus(userId, Status.CURRENT)
+                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order(userId))))
                 .next()
                 .doOnNext(order -> log.info("found current order: {}", order));
     }
 
     @Override
-    public Flux<? extends Entry<Item, Integer>> findItemsWithQuantityByOrderId(long orderId) {
+    public Flux<? extends Entry<Item, Integer>> findItemsWithQuantityByOrderId(long userId, long orderId) {
         log.info("find items with quantity by orderId: {}", orderId);
 
         return orderRepository.findById(orderId)
-                .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(orderId)))
+                .filter(order -> order.getUserId() == userId)
+                .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(userId, orderId)))
                 .doOnNext(order -> log.info("found by id {} order: {}", orderId, order))
                 .flatMapMany(order ->
                         orderItemRepository.findByOrderId(order.getId())
@@ -87,11 +88,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Mono<Order> completeCurrentOrder() {
-        log.info("complete current order");
+    public Mono<Order> completeCurrentOrder(long userId) {
+        log.info("complete current order. userId {}", userId);
 
-        return orderRepository.findByStatus(Status.CURRENT)
-                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
+        return orderRepository.findByUserIdAndStatus(userId, Status.CURRENT)
+                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order(userId))))
                 .next()
                 .flatMap(currentOrder -> {
                     currentOrder.setStatus(Status.COMPLETED);
@@ -102,11 +103,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Mono<OrderItem> changeItemQuantityInCart(long itemId, Action action) {
-        log.info("changeItemQuantityInCart. itemId {}, action: {}", itemId, action);
+    public Mono<OrderItem> changeItemQuantityInCart(long userId, long itemId, Action action) {
+        log.info("changeItemQuantityInCart. userId {}, itemId {}, action: {}", userId, itemId, action);
 
-        return orderRepository.findByStatus(Status.CURRENT)
-                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
+        return orderRepository.findByUserIdAndStatus(userId, Status.CURRENT)
+                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order(userId))))
                 .doOnNext(order -> log.info("cur order: {}", order))
                 .next()
                 .flatMap(order ->

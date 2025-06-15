@@ -30,6 +30,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-payment
+    ports:
+      - 8081:8081
     command: java -jar /app/payment.jar
   payment-db:
     image: postgres:13.3

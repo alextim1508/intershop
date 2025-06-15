@@ -22,5 +22,6 @@ public class Account {
     @Column("user_id")
     private Long userId;
 
-    private double balance;
+    @NonNull
+    private Double balance;
 }

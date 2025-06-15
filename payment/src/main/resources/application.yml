@@ -11,6 +11,7 @@ spring:
     url: jdbc:postgresql://payment-db:5432/paymentdb
     user: postgres
     password: postgres
-  sql:
-    init:
-      mode: always
+
+
+app:
+  start-balance: 10000

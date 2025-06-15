@@ -7,10 +7,15 @@ import com.alextim.intershop.service.ItemService;
 import com.alextim.intershop.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
+
+import static com.alextim.intershop.utils.Utils.extractUserId;
+import static com.alextim.intershop.utils.Utils.extractUserIdToOptional;
 
 @Controller
 @RequestMapping(value = "/items")
@@ -25,24 +30,27 @@ public class ItemController {
     private final ActionMapper actionMapper;
 
     @GetMapping("/{id}")
-    public Mono<Rendering> getItem(@PathVariable("id") long id) {
-        log.info("incoming request for getting item by id {}", id);
+    public Mono<Rendering> getItem(@AuthenticationPrincipal UserDetails user, @PathVariable("id") long itemId) {
+        log.info("incoming request for getting item by itemId {} from user {}", itemId, user);
 
-        return itemService.findItemWithQuantityById(id)
+        return itemService.findItemWithQuantityById(extractUserIdToOptional(user), itemId)
                 .map(item -> itemMapper.toDto(item.getKey(), item.getValue()))
                 .doOnNext(itemDto -> log.info("item dto: {}", itemDto))
                 .map(dto -> Rendering.view("item")
                         .modelAttribute("item", dto)
+                        .modelAttribute("authenticated", user != null)
                         .build()
                 );
     }
 
     @PostMapping("/{id}")
-    public Mono<String> changeItemQuantityInCart(@PathVariable int id, @ModelAttribute ActionDto action) {
-        log.info("incoming request for change item quantity in cart. item id {}, action {}",
-                id, action);
+    public Mono<String> changeItemQuantityInCart(@AuthenticationPrincipal UserDetails user,
+                                                 @PathVariable int id,
+                                                 @ModelAttribute ActionDto action) {
+        log.info("incoming request for change item quantity in cart from user {}. item id {}, action {} ",
+                user, id, action);
 
-        return orderService.changeItemQuantityInCart(id, actionMapper.to(action))
+        return orderService.changeItemQuantityInCart(extractUserId(user), id, actionMapper.to(action))
                .flatMap(order -> Mono.just("redirect:/items/" + id));
     }
 }

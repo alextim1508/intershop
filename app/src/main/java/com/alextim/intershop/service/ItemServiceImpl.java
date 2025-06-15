@@ -11,17 +11,15 @@ import com.alextim.intershop.entity.OrderItem;
 import com.alextim.intershop.exeption.ItemNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.reactivestreams.Publisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.StringJoiner;
 
 @Service
 @RequiredArgsConstructor
@@ -46,13 +44,13 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Mono<? extends Entry<Item, Integer>> findItemWithQuantityById(long itemId) {
-        log.info("findItemWithQuantityById. itemId: {}", itemId);
+    public Mono<? extends Entry<Item, Integer>> findItemWithQuantityById(Optional<Long> userId, long itemId) {
+        log.info("findItemWithQuantityById. userId: {}, itemId: {}", userId, itemId);
 
         Mono<Item> itemFromRepoMono = Mono.defer(() ->
                 itemRepository.findById(itemId)
-                    .switchIfEmpty(Mono.error(() -> new ItemNotFoundException(itemId)))
-                    .doOnNext(item -> log.info("found by id {} item: {}", itemId, item))
+                        .switchIfEmpty(Mono.error(() -> new ItemNotFoundException(itemId)))
+                        .doOnNext(item -> log.info("found by id {} item: {}", itemId, item))
         );
 
         Mono<Item> itemMono = itemCacheService.getItem(itemId)
@@ -62,13 +60,16 @@ public class ItemServiceImpl implements ItemService {
                                 .then(Mono.just(item))
                 );
 
-        Mono<Integer> quantityMono = orderRepository.findByStatus(Status.CURRENT)
-                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
-                .next()
-                .flatMap(order -> orderItemRepository.findByItemIdAndOrderId(itemId, order.getId()))
-                .doOnNext(orderItem -> log.info("found order-item: {}", orderItem))
-                .map(OrderItem::getQuantity)
-                .defaultIfEmpty(0);
+        Mono<Integer> quantityMono = userId.map(id ->
+                        orderRepository.findByUserIdAndStatus(id, Status.CURRENT)
+                                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order(id))))
+                                .next()
+                                .flatMap(order -> orderItemRepository.findByItemIdAndOrderId(itemId, order.getId()))
+                                .doOnNext(orderItem -> log.info("found order-item: {}", orderItem))
+                                .map(OrderItem::getQuantity)
+                                .defaultIfEmpty(0)
+                )
+                .orElseGet(() -> Mono.just(0));
 
         return Mono.zip(itemMono, quantityMono)
                 .map(tuple -> new SimpleImmutableEntry<>(tuple.getT1(), tuple.getT2()))
@@ -76,12 +77,13 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public Flux<? extends Entry<Item, Integer>> findItemsWithQuantity(String search,
+    public Flux<? extends Entry<Item, Integer>> findItemsWithQuantity(Optional<Long> userId,
+                                                                      String search,
                                                                       SortType sort,
                                                                       int pageNumber,
                                                                       int pageSize) {
-        log.info("findItemsWithQuantity. search: \"{}\", sort: {}, pageNumber: {}, pageSize: {}",
-                search, sort, pageNumber, pageSize);
+        log.info("findItemsWithQuantity. userId: {}, search: \"{}\", sort: {}, pageNumber: {}, pageSize: {}",
+                userId, search, sort, pageNumber, pageSize);
 
         PageRequest pageRequest = switch (sort) {
             case NO -> PageRequest.of(pageNumber, pageSize);
@@ -90,13 +92,14 @@ public class ItemServiceImpl implements ItemService {
         };
         log.info("pageRequest: {}", pageRequest);
 
-        Mono<Map<Long, Integer>> quantityItemIdsInCurrentOrderMono =
-                orderRepository.findByStatus(Status.CURRENT)
-                        .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order())))
-                        .flatMap(order -> orderItemRepository.findByOrderId(order.getId()))
-                        .collectMap(OrderItem::getItemId, OrderItem::getQuantity)
-                        .doOnNext(map -> log.info("Quantity-item map in current order: {}", map))
-                        .cache();
+        Mono<Map<Long, Integer>> quantityItemIdsInCurrentOrderMono = userId.map(id ->
+                        orderRepository.findByUserIdAndStatus(id, Status.CURRENT)
+                                .switchIfEmpty(Mono.defer(() -> orderRepository.save(new Order(id))))
+                                .flatMap(order -> orderItemRepository.findByOrderId(order.getId()))
+                                .collectMap(OrderItem::getItemId, OrderItem::getQuantity)
+                                .doOnNext(map -> log.info("Quantity-item map in current order: {}", map))
+                                .cache())
+                .orElseGet(() -> Mono.just(Collections.emptyMap()));
 
         Flux<Item> itemFromRepoFlux = Flux.defer(() -> {
             if (search.isEmpty()) {
@@ -127,9 +130,9 @@ public class ItemServiceImpl implements ItemService {
     }
 
     static String generateCacheKey(String search,
-                            SortType sort,
-                            int pageNumber,
-                            int pageSize) {
+                                   SortType sort,
+                                   int pageNumber,
+                                   int pageSize) {
         return new StringJoiner("-")
                 .add(search.isEmpty() ? "EMPTY" : search)
                 .add(sort.name())

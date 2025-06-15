@@ -2,10 +2,10 @@ package com.alextim.intershop.service;
 
 import com.alextim.intershop.entity.Account;
 import com.alextim.intershop.exception.InsufficientFundsException;
-import com.alextim.intershop.exception.NotFoundUserException;
 import com.alextim.intershop.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -16,6 +16,9 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
 
+    @Value("${app.start-balance}")
+    private Double startBalance;
+
     @Override
     public Mono<Account> save(Account account) {
         return accountRepository.save(account)
@@ -25,6 +28,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public Mono<Double> getBalanceByUserId(long userId) {
         return accountRepository.findByUserId(userId)
+                .switchIfEmpty(Mono.defer(() -> accountRepository.save(new Account(userId, startBalance))))
                 .doOnSuccess(account -> {
                     if (account == null) {
                         log.error("User with ID {} is not found", userId);
@@ -32,13 +36,13 @@ public class AccountServiceImpl implements AccountService {
                         log.info("User with ID {} is found", userId);
                     }
                 })
-                .map(Account::getBalance)
-                .switchIfEmpty(Mono.error(new NotFoundUserException(userId)));
+                .map(Account::getBalance);
     }
 
     @Override
     public Mono<Account> payment(long userId, double amount) {
         return accountRepository.findByUserId(userId)
+                .switchIfEmpty(Mono.defer(() -> accountRepository.save(new Account(userId, startBalance))))
                 .doOnSuccess(account -> {
                     if (account == null) {
                         log.error("User with ID {} is not found", userId);
@@ -52,7 +56,6 @@ public class AccountServiceImpl implements AccountService {
                     }
                     account.setBalance(account.getBalance() - amount);
                     return accountRepository.save(account);
-                })
-                .switchIfEmpty(Mono.error(new NotFoundUserException(userId)));
+                });
     }
 }

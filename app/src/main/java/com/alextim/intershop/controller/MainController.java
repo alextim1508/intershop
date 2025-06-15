@@ -12,6 +12,8 @@ import com.alextim.intershop.utils.SortType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.result.view.Rendering;
@@ -19,6 +21,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+
+import static com.alextim.intershop.utils.Utils.extractUserId;
+import static com.alextim.intershop.utils.Utils.extractUserIdToOptional;
 
 @RequiredArgsConstructor
 @Controller
@@ -36,18 +41,20 @@ public class MainController {
     private int partitionCount;
 
     @GetMapping
-    public Mono<Rendering> getItems(@RequestParam(defaultValue = "") String search,
+    public Mono<Rendering> getItems(@AuthenticationPrincipal UserDetails user,
+                                    @RequestParam(defaultValue = "") String search,
                                     @RequestParam(defaultValue = "NO") SortType sort,
                                     @RequestParam(defaultValue = "10") Integer pageSize,
                                     @RequestParam(defaultValue = "1") Integer pageNumber) {
-        log.info("incoming request for getting items. search: \"{}\", sort: {}, pageNumber: {}, pageSize: {}",
-                search, sort, pageNumber, pageSize);
+        log.info("incoming request for getting items from user {}. search: \"{}\", sort: {}, pageNumber: {}, pageSize: {}",
+                user, search, sort, pageNumber, pageSize);
 
-        Flux<List<ItemDto>> partitionItemDto = itemService.findItemsWithQuantity(search, sort, pageNumber - 1, pageSize)
-                .map(entry -> itemMapper.toDto(entry.getKey(), entry.getValue()))
-                .doOnNext(itemDto -> log.info("itemDto: {}", itemDto.getId()))
-                .buffer(partitionCount)
-                .doOnNext(it -> log.info("partitioned item dtos: {}", it));
+        Flux<List<ItemDto>> partitionItemDto =
+                itemService.findItemsWithQuantity(extractUserIdToOptional(user), search, sort, pageNumber - 1, pageSize)
+                    .map(entry -> itemMapper.toDto(entry.getKey(), entry.getValue()))
+                    .doOnNext(itemDto -> log.info("itemDto: {}", itemDto.getId()))
+                    .buffer(partitionCount)
+                    .doOnNext(it -> log.info("partitioned item dtos: {}", it));
 
         Mono<PagingDto> pagingDto = itemService.count(search)
                 .map(count ->
@@ -65,18 +72,20 @@ public class MainController {
                 .modelAttribute("paging", pagingDto)
                 .modelAttribute("search", search)
                 .modelAttribute("sort", sort.name())
+                .modelAttribute("authenticated", user != null)
                 .build();
         return Mono.just(r);
     }
 
     @PostMapping("/{id}")
-    public Mono<String> changeItemQuantityInCart(@PathVariable long id,
+    public Mono<String> changeItemQuantityInCart(@AuthenticationPrincipal UserDetails user,
+                                                 @PathVariable long id,
                                                  @ModelAttribute ActionDto action,
                                                  @ModelAttribute ViewParamDto viewParamDto) {
-        log.info("incoming request for change item quantity in cart. item id {}, action {}, viewParamDto {}",
-                id, action, viewParamDto);
+        log.info("incoming request for change item quantity in cart from user {}. item id {}, action {}, viewParamDto {}",
+                user, id, action, viewParamDto);
 
-        return orderService.changeItemQuantityInCart(id, actionMapper.to(action))
+        return orderService.changeItemQuantityInCart(extractUserId(user), id, actionMapper.to(action))
                 .flatMap(order ->
                         Mono.just("redirect:/main/items" +
                                 "?" +

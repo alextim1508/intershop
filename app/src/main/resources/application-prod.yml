@@ -3,22 +3,21 @@ app:
 
 spring:
   r2dbc:
-    url: r2dbc:postgresql://localhost:5433/intershopdb
+    url: r2dbc:postgresql://app-db:5432/intershopdb
     username: postgres
     password: postgres
   liquibase:
     enabled: true
-    url: jdbc:postgresql://localhost:5433/intershopdb
+    url: jdbc:postgresql://app-db:5432/intershopdb
     user: postgres
     password: postgres
   sql:
     init:
-      mode: never
+      mode: always
   data:
     redis:
-      host: localhost
+      host: app-cache-db
       port: 6379
   cache:
     redis:
       time-to-live-seconds: 60
-

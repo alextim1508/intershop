@@ -38,6 +38,7 @@
                             <span th:text="${item.getCount()}"></span>
                             <button name="action" value="plus">+</button>
                             <button name="action" value="delete" style="float:right;">&cross;</button>
+                            <input  type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                         </form>
                     </td>
                 </tr>

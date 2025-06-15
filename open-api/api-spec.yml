@@ -3,8 +3,11 @@ info:
   title: Payment Service API
   version: 1.0.0
 servers:
-  - url: http://payment:8081
-    description: Local development server
+  - url: http://{host}:8081
+    variables:
+      host:
+        default: localhost
+
 tags:
   - name: Balance
     description: Endpoints related to checking user balance

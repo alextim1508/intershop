@@ -14,17 +14,17 @@ public interface OrderService {
 
     Mono<Order> save(Order order);
 
-    Flux<Order> findAllCompletedOrders();
+    Flux<Order> findAllCompletedOrders(long userId);
 
-    Mono<Order> findById(long id);
+    Mono<Order> findById(long userId, long orderId);
 
-    Mono<Order> findCurrentOrder();
+    Mono<Order> findCurrentOrder(long userId);
 
-    Flux<? extends Entry<Item, Integer>> findItemsWithQuantityByOrderId(long orderId);
+    Flux<? extends Entry<Item, Integer>> findItemsWithQuantityByOrderId(long userId, long orderId);
 
-    Mono<Order> completeCurrentOrder();
+    Mono<Order> completeCurrentOrder(long userId);
 
-    Mono<OrderItem> changeItemQuantityInCart(long itemId, Action action);
+    Mono<OrderItem> changeItemQuantityInCart(long userId, long itemId, Action action);
 
     double calcPrice(Item item, int quantity);
 }

@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-user-id-to-order-table-id
+      author: Aleksey Timofeev
+      changes:
+        - addColumn:
+            tableName: orders
+            columns:
+              name: user_id
+              type: bigint
+              constraints:
+                nullable: false
+                foreignKeyName: fk_orders_users
+                references: user_details(id)

@@ -4,10 +4,13 @@ import com.alextim.intershop.dto.ItemDto;
 import com.alextim.intershop.dto.OrderDto;
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
+import com.alextim.intershop.entity.User;
 import com.alextim.intershop.mapper.ItemMapper;
 import com.alextim.intershop.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.alextim.intershop.utils.Utils.extractUserId;
+
 @Controller
 @RequestMapping("/orders")
 @RequiredArgsConstructor
@@ -31,11 +36,11 @@ public class OrderController {
     private final ItemMapper itemMapper;
 
     @GetMapping
-    public Mono<Rendering> getOrders() {
-        log.info("incoming request for getting orders");
+    public Mono<Rendering> getOrders(@AuthenticationPrincipal UserDetails user) {
+        log.info("incoming request for getting  from userNam {}", user);
 
-        return orderService.findAllCompletedOrders()
-                .flatMap(this::getOrderDtoMono)
+        return orderService.findAllCompletedOrders(extractUserId(user))
+                .flatMap(order -> getOrderDtoMono(extractUserId(user), order))
                 .doOnNext(orderDto -> log.info("orderDto: {}", orderDto))
                 .collectList()
                 .map(orderDto -> Rendering.view("orders")
@@ -45,13 +50,14 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public Mono<Rendering> getOrder(@PathVariable long id,
+    public Mono<Rendering> getOrder(@AuthenticationPrincipal UserDetails user,
+                                    @PathVariable("id") long orderId,
                                     @RequestParam(defaultValue = "false") boolean newOrder,
                                     @RequestParam(defaultValue = "false") boolean rejectedOrder) {
-        log.info("incoming request for getting order by id: {}", id);
+        log.info("incoming request for getting order by orderId {} from user {}", orderId, user);
 
-        return orderService.findById(id)
-                .flatMap(this::getOrderDtoMono)
+        return orderService.findById(extractUserId(user), orderId)
+                .flatMap(order -> getOrderDtoMono(((User) user).getId(), order))
                 .doOnNext(orderDto -> log.info("orderDto: {}", orderDto))
                 .map(orderDto -> Rendering.view("order")
                         .modelAttribute("order", orderDto)
@@ -61,8 +67,8 @@ public class OrderController {
                 );
     }
 
-    private Mono<OrderDto> getOrderDtoMono(Order order) {
-        return orderService.findItemsWithQuantityByOrderId(order.getId())
+    private Mono<OrderDto> getOrderDtoMono(long userId, Order order) {
+        return orderService.findItemsWithQuantityByOrderId(userId, order.getId())
                 .collectMap(Entry::getKey, Entry::getValue)
                 .map(map -> {
                     List<ItemDto> itemDtos = new ArrayList<>();
