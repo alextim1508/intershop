@@ -23,6 +23,7 @@ public abstract class AbstractRepoTestContainer {
         databaseClient.sql("DELETE FROM orders_items;") .fetch().rowsUpdated()
                 .then(databaseClient.sql("DELETE FROM orders;").fetch().rowsUpdated())
                 .then(databaseClient.sql("DELETE FROM items;").fetch().rowsUpdated())
+                .then(databaseClient.sql("DELETE FROM user_details;").fetch().rowsUpdated())
                 .then()
                 .block();
     }

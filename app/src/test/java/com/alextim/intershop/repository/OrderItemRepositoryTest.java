@@ -4,6 +4,7 @@ import com.alextim.intershop.AbstractRepoTestContainer;
 import com.alextim.intershop.entity.Item;
 import com.alextim.intershop.entity.Order;
 import com.alextim.intershop.entity.OrderItem;
+import com.alextim.intershop.entity.User;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class OrderItemRepositoryTest extends AbstractRepoTestContainer {
 
     @Autowired
+    UserRepository userRepository;
+    @Autowired
     ItemRepository itemRepository;
     @Autowired
     OrderRepository orderRepository;
@@ -24,6 +27,8 @@ public class OrderItemRepositoryTest extends AbstractRepoTestContainer {
 
     @Test
     public void findByOrderId_shouldFindOrderItemsByOrderId() {
+        User user = userRepository.save(new User("user", "pass")).block();
+
         List<Item> items = itemRepository.saveAll(Arrays.asList(
                         new Item("title1", "description1", "img", 0.0),
                         new Item("title2", "description2", "img", 0.0),
@@ -33,7 +38,7 @@ public class OrderItemRepositoryTest extends AbstractRepoTestContainer {
                 .collectList()
                 .block();
 
-        List<Order> orders = orderRepository.saveAll(Arrays.asList(new Order(), new Order()))
+        List<Order> orders = orderRepository.saveAll(Arrays.asList(new Order(user.getId()), new Order(user.getId())))
                 .thenMany(orderRepository.findAll())
                 .collectList()
                 .block();
@@ -58,6 +63,8 @@ public class OrderItemRepositoryTest extends AbstractRepoTestContainer {
 
     @Test
     public void findByItemIdAndOrderId_shouldFindOrderItemByItemIdAndOrderId() {
+        User user = userRepository.save(new User("user", "pass")).block();
+
         List<Item> items = itemRepository.saveAll(Arrays.asList(
                         new Item("title1", "description1", "img", 0.0),
                         new Item("title2", "description2", "img", 0.0),
@@ -67,7 +74,7 @@ public class OrderItemRepositoryTest extends AbstractRepoTestContainer {
                 .collectList()
                 .block();
 
-        List<Order> orders = orderRepository.saveAll(Arrays.asList(new Order(), new Order()))
+        List<Order> orders = orderRepository.saveAll(Arrays.asList(new Order(user.getId()), new Order(user.getId())))
                 .thenMany(orderRepository.findAll())
                 .collectList()
                 .block();

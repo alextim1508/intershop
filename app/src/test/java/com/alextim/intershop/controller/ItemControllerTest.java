@@ -1,32 +1,21 @@
 package com.alextim.intershop.controller;
 
 import com.alextim.intershop.AbstractControllerTestContainer;
-import com.alextim.intershop.entity.Item;
-import com.alextim.intershop.repository.ItemRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.web.reactive.function.BodyInserters;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf;
 
 
 public class ItemControllerTest extends AbstractControllerTestContainer {
-
-    @Autowired
-    ItemRepository itemRepository;
-
-    private Item item1, item2;
-
-    @BeforeEach
-    public void setUp() {
-        item1 = itemRepository.save(new Item("item1", "description", "img", 12.1))
-                .block();
-        item2 = itemRepository.save(new Item("item2", "description", "img", 12.1))
-                .block();
-    }
 
     @Test
     void getItem_shouldGetItemByIdThenReturnOkTest() {
@@ -46,18 +35,40 @@ public class ItemControllerTest extends AbstractControllerTestContainer {
 
     @Test
     void changeItemQuantityInCart_shouldChangeItemQuantityThenRedirectTest() {
+        var authentication = new UsernamePasswordAuthenticationToken(user, "password", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+
         MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
 
         bodyBuilder.part("action", "PLUS", MediaType.TEXT_PLAIN)
                 .header("Content-Disposition", "form-data; name=action")
                 .header("Content-type", "text/plain");
 
-        webTestClient.post()
+        webTestClient
+                .mutateWith(SecurityMockServerConfigurers.mockAuthentication(authentication))
+                .mutateWith(csrf())
+                .post()
                 .uri("/items/{id}", item1.getId())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
                 .exchange()
                 .expectStatus().is3xxRedirection()
                 .expectHeader().location("/items/" + item1.getId());
+    }
+
+    @Test
+    void changeItemQuantityInCart_shouldChangeItemQuantityWithoutAuthThenReturnForbiddenTest() {
+        MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
+
+        bodyBuilder.part("action", "PLUS", MediaType.TEXT_PLAIN)
+                .header("Content-Disposition", "form-data; name=action")
+                .header("Content-type", "text/plain");
+
+        webTestClient
+                .post()
+                .uri("/items/{id}", item1.getId())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
+                .exchange()
+                .expectStatus().isForbidden();
     }
 }
