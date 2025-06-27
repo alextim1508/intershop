@@ -25,6 +25,12 @@ services:
     ports:
       - 6379:6379
     command: ["redis-server"]
+  app-session-db:
+    image: redis:7.4-bookworm
+    container_name: app-session-db
+    ports:
+      - 6380:6380
+    command: [ "redis-server", "--port 6380"]
   payment:
     container_name: payment
     build:

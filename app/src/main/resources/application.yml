@@ -14,11 +14,12 @@ spring:
   sql:
     init:
       mode: never
-  data:
-    redis:
+  redis:
+    cache:
       host: localhost
       port: 6379
-  cache:
-    redis:
       time-to-live-seconds: 60
+    session:
+      host: localhost
+      port: 6380
 

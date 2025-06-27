@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -31,6 +32,7 @@ public class ItemServiceImpl implements ItemService {
     private final OrderItemRepository orderItemRepository;
     private final ItemCacheService itemCacheService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public Mono<Item> save(Item item) {
         log.info("save item: {}", item);

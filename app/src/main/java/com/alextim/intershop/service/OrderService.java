@@ -16,7 +16,7 @@ public interface OrderService {
 
     Flux<Order> findAllCompletedOrders(long userId);
 
-    Mono<Order> findById(long userId, long orderId);
+    Mono<Order> findById(long orderId);
 
     Mono<Order> findCurrentOrder(long userId);
 

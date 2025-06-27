@@ -7,6 +7,9 @@
 </head>
 
 <body>
+    <a th:if="${authenticated}" href="/logout" style="float:right;">
+        <b>ВЫЙТИ &cudarrr;</b>
+    </a>
     <a href="/orders" style="float:right;">
         <b>ЗАКАЗЫ &cudarrr;</b>
     </a>
@@ -76,8 +79,6 @@
                                 <input type="hidden" name="search" th:value="${search}"></input>
                                 <input type="hidden" name="pageSize" th:value="${paging.pageSize()}"></input>
                                 <input type="hidden" name="pageNumber" th:value="${paging.pageNumber()}"></input>
-                                <input  type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-
                                 <button name="action" value="minus">-</button>
                                 <span th:text="${item.getCount()}"></span>
                                 <button name="action" value="plus">+</button>

@@ -6,4 +6,8 @@ public class OrderNotFoundException extends RuntimeException {
         super(String.format("Order with %d ID is not exist or not available for user with %d ID ",
                 orderId, userId));
     }
+
+    public OrderNotFoundException(long orderId) {
+        super(String.format("Order with %d ID is not exist", orderId));
+    }
 }

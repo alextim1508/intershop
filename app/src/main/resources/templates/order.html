@@ -7,6 +7,9 @@
 </head>
 
 <body>
+<a href="/logout" style="float:right;">
+    <b>ВЫЙТИ &cudarrr;</b>
+</a>
 <a href="/orders" style="float:right;">
     <b>ЗАКАЗЫ &cudarrr;</b>
 </a>
@@ -31,6 +34,7 @@
                     <td>
                         <a th:href="${'/items/'+item.getId()}">
                             <img width="300" height="300" th:src="${item.getImgPath()}">
+                            <input  type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                         </a>
                     </td>
                 </tr>

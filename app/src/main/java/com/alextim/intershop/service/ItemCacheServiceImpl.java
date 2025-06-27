@@ -24,7 +24,7 @@ public class ItemCacheServiceImpl implements ItemCacheService {
     private final ReactiveRedisTemplate<String, List<Item>> itemListRedisTemplate;
     private final ReactiveRedisTemplate<String, String> redisTemplate;
 
-    @Value("${spring.cache.redis.time-to-live-seconds}")
+    @Value("${spring.redis.cache.time-to-live-seconds}")
     public Long ttl;
 
     public enum CacheName {

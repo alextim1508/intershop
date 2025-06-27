@@ -20,7 +20,12 @@ public class UserDetailsServiceImpl implements ReactiveUserDetailsService {
         log.info("find user by username {} for authentication", username);
 
         return userRepository.findByUsername(username)
-                .doOnNext(user -> log.info("found {} for authentication", user))
+                .doOnSuccess(user -> {
+                    if(user != null)
+                        log.info("found {} for authentication", user);
+                    else
+                        log.info("not found user by username {}", username);
+                })
                 .map(user -> user);
     }
 }

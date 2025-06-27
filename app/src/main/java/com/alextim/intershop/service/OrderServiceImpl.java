@@ -11,6 +11,8 @@ import com.alextim.intershop.entity.OrderItem;
 import com.alextim.intershop.exeption.OrderNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,6 +32,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
 
+    @PreAuthorize("isAuthenticated()")
     @Override
     public Mono<Order> save(Order order) {
         log.info("save order: {}", order);
@@ -42,16 +45,20 @@ public class OrderServiceImpl implements OrderService {
     public Flux<Order> findAllCompletedOrders(long userId) {
         log.info("find all completed orders. userId: {}", userId);
 
-        return orderRepository.findByUserIdAndStatus(userId , Status.COMPLETED)
+        return orderRepository.findByUserIdAndStatus(userId, Status.COMPLETED)
                 .doOnNext(order -> log.info("found completed order: {}", order));
     }
 
+    @PostAuthorize(
+            "authentication.principal instanceof T(com.alextim.intershop.entity.User) and " +
+            "authentication.principal.id == returnObject.userId"
+    )
     @Override
-    public Mono<Order> findById(long userId, long orderId) {
+    public Mono<Order> findById(long orderId) {
         log.info("find order by orderId {}", orderId);
 
         return orderRepository.findById(orderId)
-                .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(userId, orderId)))
+                .switchIfEmpty(Mono.error(() -> new OrderNotFoundException(orderId)))
                 .doOnNext(order -> log.info("found by orderId {} order: {}", orderId, order));
     }
 
