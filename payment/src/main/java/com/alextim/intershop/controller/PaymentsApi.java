@@ -67,6 +67,9 @@ public interface PaymentsApi {
             @ApiResponse(responseCode = "500", description = "Internal server error", content = {
                 @Content(mediaType = "application/json", schema = @Schema(implementation = PaymentResponse.class))
             })
+        },
+        security = {
+            @SecurityRequirement(name = "bearerAuth")
         }
     )
     @RequestMapping(

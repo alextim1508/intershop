@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
 public interface PaymentService {
-    Mono<ResponseEntity<BalanceResponse>> getBalance();
+    Mono<ResponseEntity<BalanceResponse>> getBalance(long userId);
 
-    Mono<ResponseEntity<PaymentResponse>> payment(double amount);
+    Mono<ResponseEntity<PaymentResponse>> payment(long userId, double amount);
 }

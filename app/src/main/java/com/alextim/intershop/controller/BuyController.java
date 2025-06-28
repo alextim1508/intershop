@@ -28,7 +28,7 @@ public class BuyController {
                             @ModelAttribute AmountDto amountDto) {
         log.info("incoming request from user {} for buying of amount: {}", user, amountDto.amount);
 
-        return paymentService.payment(amountDto.amount)
+        return paymentService.payment(user.getId(), amountDto.amount)
                 .map(response -> response.getBody().getSuccess())
                 .flatMap(success ->
                         orderService.completeCurrentOrder(user.getId())

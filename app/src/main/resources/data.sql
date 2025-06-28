@@ -1,5 +1,6 @@
 INSERT INTO user_details(username, password, roles, created) values ('admin', '$2a$10$sDqj8YbK78ZdBcUU1O6/o.BSep4OkUkNcMnAXTsyd/FT.I.9IOr5a', '["ADMIN_ROLE"]', CURRENT_DATE) ON CONFLICT DO NOTHING;
 INSERT INTO user_details(username, password, roles, created) values ('moder', '$2a$10$sDqj8YbK78ZdBcUU1O6/o.BSep4OkUkNcMnAXTsyd/FT.I.9IOr5a', '["MODERATOR_ROLE", "USER_ROLE"]', CURRENT_DATE) ON CONFLICT DO NOTHING;
+INSERT INTO user_details(username, password, roles, created) values ('alex', '$2a$10$sDqj8YbK78ZdBcUU1O6/o.BSep4OkUkNcMnAXTsyd/FT.I.9IOr5a', '["USER_ROLE"]', CURRENT_DATE) ON CONFLICT DO NOTHING;
 
 INSERT INTO items (title, description, img_path, price) VALUES (
 'Перчатки ММА BoyBo Stain Black',

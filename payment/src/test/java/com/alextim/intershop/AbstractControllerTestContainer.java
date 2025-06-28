@@ -6,7 +6,9 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.reactive.server.WebTestClientConfigurer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 
@@ -19,6 +21,22 @@ public abstract class AbstractControllerTestContainer {
 
     @Autowired
     protected DatabaseClient databaseClient;
+
+    protected WebTestClientConfigurer getMockJwt() {
+        return SecurityMockServerConfigurers.mockJwt()
+                .jwt(jwt -> jwt
+                        .claim("resource_access",
+                                "{\n" +
+                                        "   \"account\": {\n" +
+                                        "       \"roles\": [\n" +
+                                        "           \"manage-account\",\n" +
+                                        "           \"manage-account-links\",\n" +
+                                        "           \"view-profile\"\n" +
+                                        "       ]\n" +
+                                        "   }\n" +
+                                        "}")
+                );
+    }
 
     @Container
     @ServiceConnection

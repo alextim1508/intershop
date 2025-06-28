@@ -1,0 +1,10 @@
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://payment-db:5432/paymentdb
+  liquibase:
+    url: jdbc:postgresql://payment-db:5432/paymentdb
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://auth-server:8082/realms/master

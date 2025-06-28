@@ -22,4 +22,17 @@ spring:
     session:
       host: localhost
       port: 6380
-
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:9090/realms/master
+        registration:
+          intershop:
+            provider: keycloak
+            authorizationGrantType: client_credentials
+            client-id: intershop
+            client-secret: qt2uI1qNAGEIcPwplux6uAEDWptbhxoX
+            scope: profile
+            clientAuthenticationMethod: client_secret_post

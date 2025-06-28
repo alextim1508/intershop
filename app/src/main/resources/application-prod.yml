@@ -1,24 +1,19 @@
-app:
-  partition-count: 4
-
 spring:
   r2dbc:
     url: r2dbc:postgresql://app-db:5432/intershopdb
-    username: postgres
-    password: postgres
   liquibase:
-    enabled: true
     url: jdbc:postgresql://app-db:5432/intershopdb
-    user: postgres
-    password: postgres
   sql:
     init:
       mode: always
   redis:
     cache:
       host: app-cache-db
-      port: 6379
-      time-to-live-seconds: 60
     session:
       host: app-session-db
-      port: 6380
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://auth-server:8082/realms/master

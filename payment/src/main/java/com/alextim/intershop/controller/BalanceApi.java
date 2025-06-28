@@ -62,6 +62,9 @@ public interface BalanceApi {
             @ApiResponse(responseCode = "500", description = "Internal server error", content = {
                 @Content(mediaType = "application/json", schema = @Schema(implementation = BalanceResponse.class))
             })
+        },
+        security = {
+            @SecurityRequirement(name = "bearerAuth")
         }
     )
     @RequestMapping(

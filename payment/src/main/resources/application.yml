@@ -1,17 +1,21 @@
 server:
   port: 8081
 
+app:
+  start-balance: 10000
+
 spring:
   r2dbc:
-    url: r2dbc:postgresql://payment-db:5432/paymentdb
+    url: r2dbc:postgresql://localhost:5434/paymentdb
     username: postgres
     password: postgres
   liquibase:
     enabled: true
-    url: jdbc:postgresql://payment-db:5432/paymentdb
+    url: jdbc:postgresql://localhost:5434/paymentdb
     user: postgres
     password: postgres
-
-
-app:
-  start-balance: 10000
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9090/realms/master

@@ -50,6 +50,17 @@ services:
       POSTGRES_DB: paymentdb
     volumes:
       - payment-db-data:/val/lib/postgresql/data
+  auth-server:
+    image: quay.io/keycloak/keycloak:26.1.3
+    container_name: auth-server
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    ports:
+      - 9090:8082
+    volumes:
+      - ./realm-config:/opt/keycloak/data/import
+    command: start-dev --import-realm --http-port=8082
 
 volumes:
   app-db-data:

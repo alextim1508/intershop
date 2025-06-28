@@ -9,15 +9,19 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class PaymentServiceImpl implements PaymentService {
 
-    private static final Long USER_ID_STUB = 1L;
-
+    private final ReactiveOAuth2AuthorizedClientManager authorizedClientManager;
     private BalanceApi balanceApi;
     private PaymentsApi paymentsApi;
 
@@ -28,22 +32,40 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public Mono<ResponseEntity<BalanceResponse>> getBalance() {
-        log.info("Get balance for user with ID {}", USER_ID_STUB);
+    public Mono<ResponseEntity<BalanceResponse>> getBalance(long userId) {
+        log.info("Get balance for user with ID {}", userId);
 
-        return balanceApi.balanceGetWithHttpInfo(USER_ID_STUB)
+        return authorizedClientManager.authorize(OAuth2AuthorizeRequest
+                        .withClientRegistrationId("intershop")
+                        .principal("system")
+                        .build())
+                .map(OAuth2AuthorizedClient::getAccessToken)
+                .map(OAuth2AccessToken::getTokenValue)
+                .flatMap(accessToken -> {
+                    balanceApi.getApiClient().setBearerToken(accessToken);
+                    return balanceApi.balanceGetWithHttpInfo(userId);
+                })
                 .doOnSuccess(response ->
                         log.info("Get user with {} balance response {} (code: {})",
-                                USER_ID_STUB, response.getBody(), response.getStatusCode()));
+                                userId, response.getBody(), response.getStatusCode()));
     }
 
     @Override
-    public Mono<ResponseEntity<PaymentResponse>> payment(double amount) {
-        log.info("Payment for user with ID {} of amount {}", USER_ID_STUB, amount);
+    public Mono<ResponseEntity<PaymentResponse>> payment(long userId, double amount) {
+        log.info("Payment for user with ID {} of amount {}", userId, amount);
 
-        return paymentsApi.payPostWithHttpInfo(new PaymentRequest().userId(USER_ID_STUB).amount(amount))
-                .doOnNext(response ->
-                        log.info("Get user with {} payment response {} (code: {})",
-                            USER_ID_STUB,  response.getBody(), response.getStatusCode()));
+        return authorizedClientManager.authorize(OAuth2AuthorizeRequest
+                        .withClientRegistrationId("intershop")
+                        .principal("system")
+                        .build())
+                .map(OAuth2AuthorizedClient::getAccessToken)
+                .map(OAuth2AccessToken::getTokenValue)
+                .flatMap(accessToken -> {
+                    paymentsApi.getApiClient().setBearerToken(accessToken);
+                    return paymentsApi.payPostWithHttpInfo(new PaymentRequest().userId(userId).amount(amount))
+                            .doOnNext(response ->
+                                    log.info("Get user with {} payment response {} (code: {})",
+                                            userId, response.getBody(), response.getStatusCode()));
+                });
     }
 }

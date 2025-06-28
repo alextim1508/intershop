@@ -18,6 +18,8 @@ paths:
   /balance:
     get:
       summary: Get user's current balance
+      security:
+        - bearerAuth: []
       tags:
         - Balance
       parameters:
@@ -47,6 +49,8 @@ paths:
   /pay:
     post:
       summary: Process a payment by deducting amount from user's balance
+      security:
+        - bearerAuth: []
       tags:
         - Payments
       requestBody:
@@ -84,6 +88,11 @@ paths:
       x-accepts:
         - application/json
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     UserId:
       name: userId

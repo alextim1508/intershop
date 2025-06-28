@@ -71,7 +71,7 @@ public class CartController {
         return Mono.zip(
                         orderService.findItemsWithQuantityByOrderId(userId, order.getId())
                                 .collectMap(Entry::getKey, Entry::getValue),
-                        paymentService.getBalance()
+                        paymentService.getBalance(userId)
                 )
                 .map(tuple -> {
                     Map<Item, Integer> map = tuple.getT1();

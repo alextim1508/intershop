@@ -8,8 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 public class BalanceControllerTest extends AbstractControllerTestContainer {
 
@@ -23,12 +22,12 @@ public class BalanceControllerTest extends AbstractControllerTestContainer {
     public void getBalance_shouldGetBalanceTest() {
         double balance = 100.0;
 
-        Account account = new Account(1L);
-        account.setBalance(balance);
+        Account account = new Account(1L, balance);
 
         Account savedAccount = accountService.save(account).block();
 
-        webTestClient.get()
+        webTestClient.mutateWith(getMockJwt())
+                .get()
                 .uri("/balance?userId={userId}", savedAccount.getId())
                 .exchange()
                 .expectStatus().isEqualTo(OK)
@@ -40,17 +39,13 @@ public class BalanceControllerTest extends AbstractControllerTestContainer {
     }
 
     @Test
-    public void getBalance_shouldReturnNotFoundTest() {
+    public void getBalance_shouldReturnUnauthorizedDTest() {
         Long userId = 1L;
 
-        webTestClient.get()
+        webTestClient
+                .get()
                 .uri("/balance?userId={userId}", userId)
                 .exchange()
-                .expectStatus().isEqualTo(NOT_FOUND)
-                .expectBody(BalanceResponse.class)
-                .value(response -> {
-                    assert response.getUserId().equals(userId);
-                    assert response.getBalance() == null;
-                });
+                .expectStatus().isEqualTo(UNAUTHORIZED);
     }
 }

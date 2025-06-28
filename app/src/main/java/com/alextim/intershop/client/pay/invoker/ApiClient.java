@@ -153,6 +153,7 @@ public class ApiClient extends JavaTimeFormatter {
     protected void init() {
         // Setup authentications (key: authentication name, value: authentication).
         authentications = new HashMap<String, Authentication>();
+        authentications.put("bearerAuth", new HttpBearerAuth("bearer"));
         // Prevent the authentications from being modified.
         authentications = Collections.unmodifiableMap(authentications);
     }
